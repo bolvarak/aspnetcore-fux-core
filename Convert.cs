@@ -287,16 +287,16 @@ namespace Fux.Core
         /// This method asynchronously maps values to a new object instance <typeparamref name="TTarget"/> from an external
         /// source using <paramref name="callback"/> with a strict return type 
         /// </summary>
-        /// <param name="targetType"></param>
         /// <param name="callback"></param>
         /// <typeparam name="TTarget"></typeparam>
         /// <typeparam name="TValue"></typeparam>
         /// <typeparam name="TAttribute"></typeparam>
         /// <returns></returns>
-        public static Task<TTarget> MapWithValueGetterAsync<TTarget, TValue, TAttribute>(Type targetType,
-            DelegateGetValueCallbackAsync<TValue, TAttribute> callback)
-            where TAttribute : FromPropertyAttribute => (generateObjectWithCallbackAsync(typeof(TTarget),
-            (callback as DelegateGetValueCallbackAsync), typeof(TAttribute)) as Task<TTarget>);
+        public static Task<TTarget>
+            MapWithValueGetterAsync<TTarget, TValue, TAttribute>(
+                DelegateGetValueCallbackAsync<TValue, TAttribute> callback) where TAttribute : FromPropertyAttribute =>
+            (generateObjectWithCallbackAsync(typeof(TTarget), (callback as DelegateGetValueCallbackAsync),
+                typeof(TAttribute)) as Task<TTarget>);
     }
 
     /// <summary>
