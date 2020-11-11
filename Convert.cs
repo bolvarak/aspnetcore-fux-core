@@ -264,10 +264,11 @@ namespace Fux.Core
         /// </summary>
         /// <param name="callback"></param>
         /// <typeparam name="TTarget"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
         /// <typeparam name="TAttribute"></typeparam>
         /// <returns></returns>
         public static TTarget
-            MapWithValueGetter<TTarget, TAttribute>(DelegateGetValueCallback<TTarget, TAttribute> callback)
+            MapWithValueGetter<TTarget, TValue, TAttribute>(DelegateGetValueCallback<TValue, TAttribute> callback)
             where TAttribute : FromPropertyAttribute => generateObjectWithCallback(typeof(TTarget),
             (callback as DelegateGetValueCallback), typeof(TAttribute));
 
@@ -289,10 +290,11 @@ namespace Fux.Core
         /// <param name="targetType"></param>
         /// <param name="callback"></param>
         /// <typeparam name="TTarget"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
         /// <typeparam name="TAttribute"></typeparam>
         /// <returns></returns>
-        public static Task<TTarget> MapWithValueGetterAsync<TTarget, TAttribute>(Type targetType,
-            DelegateGetValueCallbackAsync<TTarget, TAttribute> callback)
+        public static Task<TTarget> MapWithValueGetterAsync<TTarget, TValue, TAttribute>(Type targetType,
+            DelegateGetValueCallbackAsync<TValue, TAttribute> callback)
             where TAttribute : FromPropertyAttribute => (generateObjectWithCallbackAsync(typeof(TTarget),
             (callback as DelegateGetValueCallbackAsync), typeof(TAttribute)) as Task<TTarget>);
     }
