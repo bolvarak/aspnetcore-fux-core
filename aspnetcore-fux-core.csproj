@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Fux.Core</AssemblyName>
+    <Authors>bolvarak</Authors>
+    <Company></Company>
+    <Description>
+      This client library is just a collection of potentially useful things
+    </Description>
+    <PackageId>Fux.Core</PackageId>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>Abstract;Library;Singleton;Reflection</PackageTags>
+    <Product>Fux.Core Library</Product>
+    <RepositoryUrl>https://github.com/bolvarak/aspnetcore-fux-core.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <RootNamespace>Fux.Core</RootNamespace>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <PlatformTarget>x64</PlatformTarget>
+    <OutputPath>bin/Debug</OutputPath>
+    <DocumentationFile>bin/Debug/netcoreapp3.1/Fux.Core.xml</DocumentationFile>
+    <NoWarn>1701;1702;1591</NoWarn>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <Optimize>True</Optimize>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <OutputPath>bin/Release</OutputPath>
+    <PlatformTarget>x64</PlatformTarget>
+    <DocumentationFile>bin/Release/netcoreapp3.1/Fux.Core.xml</DocumentationFile>
+    <Optimize>True</Optimize>
+    <NoWarn>1701;1702;1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+  </ItemGroup>
+</Project>
+
