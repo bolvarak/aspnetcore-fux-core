@@ -2,9 +2,9 @@
   <PropertyGroup>
     <AssemblyName>Fux.Core</AssemblyName>
     <Authors>bolvarak</Authors>
-    <Company></Company>
-    <Description>
-      This client library is just a collection of potentially useful things
+    <Company/>
+    <Description>&#xD;
+      This client library is just a collection of potentially useful things&#xD;
     </Description>
     <PackageId>Fux.Core</PackageId>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -13,8 +13,8 @@
     <RepositoryUrl>https://github.com/bolvarak/aspnetcore-fux-core.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <RootNamespace>Fux.Core</RootNamespace>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <Version>1.0.3</Version>
+    <TargetFramework>net5.0</TargetFramework>
+    <Version>1.0.5</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <PlatformTarget>x64</PlatformTarget>
@@ -32,7 +32,6 @@
     <NoWarn>1701;1702;1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3"/>
   </ItemGroup>
 </Project>
-

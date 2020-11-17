@@ -255,6 +255,12 @@ namespace Fux.Core
     public class Reflection<T>
     {
         /// <summary>
+        /// This property contains a historical record of flattened types
+        /// /// </summary>
+        private static Dictionary<Type, Dictionary<string, PropertyInfo>> _flattenedTypes =
+            new Dictionary<Type, Dictionary<string, PropertyInfo>>();
+
+        /// <summary>
         /// This property contains the list of arguments to pass to the constructor
         /// </summary>
         private readonly List<object> _arguments = new List<object>();
@@ -288,6 +294,30 @@ namespace Fux.Core
         private readonly Type _type = typeof(T);
 
         /// <summary>
+        /// This method returns the property information for a flattened and normalized object
+        /// or maps it immediately, stores it and returns it
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static Dictionary<string, PropertyInfo> GetFlattenedType(Type type)
+        {
+            // Check the flattened types and noralize it inline
+            if (!_flattenedTypes.ContainsKey(type))
+                Reflection.Instantiate(type).FlattenAndNormalize();
+            // We're done, return the flattened object
+            return _flattenedTypes[type];
+        }
+
+        /// <summary>
+        /// This method returns the property information for a flattened and normalized object
+        /// or maps it immediately, stores it and returns it
+        /// </summary>
+        /// <typeparam name="TType"></typeparam>
+        /// <returns></returns>
+        public Dictionary<string, PropertyInfo> GetFlattenedType<TType>() =>
+            GetFlattenedType(typeof(TType));
+
+        /// <summary>
         /// This method reflects and instantiates the object
         /// </summary>
         public Reflection() => Instantiate();
@@ -299,7 +329,7 @@ namespace Fux.Core
         public Reflection(IEnumerable<object> arguments) => WithArguments(arguments).Instantiate();
 
         /// <summary>
-        /// This method reflects and instantiates the object with constructor arguments 
+        /// This method reflects and instantiates the object with constructor arguments
         /// </summary>
         /// <param name="arguments"></param>
         public Reflection(params object[] arguments) => WithArguments(arguments).Instantiate();
@@ -381,7 +411,7 @@ namespace Fux.Core
         /// <typeparam name="TValue"></typeparam>
         protected void SetPropertyValue<TValue>(T instance, Expression<Func<T, TValue>> expression, TValue value) =>
             PropertyInfo(expression)?.SetValue(instance, value);
-        
+
         /// <summary>
         /// This method flattens an object and normalizes the property names to outer<paramref name="separator"/>inner
         /// NOTE:  This uses case insensitivity, keep that in mind when using this against POCOs
@@ -390,21 +420,27 @@ namespace Fux.Core
         /// <returns></returns>
         public Dictionary<string, PropertyInfo> FlattenAndNormalize(char separator = '.')
         {
-            // Define our properties
-            Dictionary<string, PropertyInfo> flattenedProperties = new Dictionary<string, PropertyInfo>();
-            // Iterate over the properties
-            foreach (KeyValuePair<string, PropertyInfo> propertyInfo in Properties())
+            // Check for the existance of the type in the flattened properties and return it
+            if (!_flattenedTypes.ContainsKey(typeof(T)))
             {
-                // Define the property path
-                string path = propertyInfo.Value.Name.ToLower();
-                // Check the property for a class and flatten it
-                if (propertyInfo.Value.GetType().IsClass)
-                    FlattenAndNormalize(propertyInfo.Value.GetType(), separator, path, ref flattenedProperties);
-                // Add the property to the response
-                flattenedProperties.Add(path, propertyInfo.Value);
+                // Define our properties
+                Dictionary<string, PropertyInfo> flattenedProperties = new Dictionary<string, PropertyInfo>();
+                // Iterate over the properties
+                foreach (KeyValuePair<string, PropertyInfo> propertyInfo in Properties())
+                {
+                    // Define the property path
+                    string path = propertyInfo.Value.Name.ToLower();
+                    // Check the property for a class and flatten it
+                    if (propertyInfo.Value.GetType().IsClass)
+                        FlattenAndNormalize(propertyInfo.Value.GetType(), separator, path, ref flattenedProperties);
+                    // Add the property to the response
+                    flattenedProperties.Add(path, propertyInfo.Value);
+                }
+                // Add the flattened type to the instance
+                _flattenedTypes[typeof(T)] = flattenedProperties;
             }
             // We're done, return the flattened object
-            return flattenedProperties;
+            return _flattenedTypes[typeof(T)];
         }
 
         /// <summary>
