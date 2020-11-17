@@ -6,6 +6,7 @@
     <Description>&#xD;
       This client library is just a collection of potentially useful things&#xD;
     </Description>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>Fux.Core</PackageId>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>Abstract;Library;Singleton;Reflection</PackageTags>
