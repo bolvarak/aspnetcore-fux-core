@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace Fux.Core
 {
-    
+
     /// <summary>
     /// This structure maintains the time table for a task
     /// </summary>
@@ -21,7 +21,7 @@ namespace Fux.Core
         /// </summary>
         [JsonProperty("iteration")]
         public int? Iteration { get; set; }
-        
+
         /// <summary>
         /// This property contains the total number of iterations
         /// </summary>
@@ -33,27 +33,29 @@ namespace Fux.Core
         /// </summary>
         [JsonProperty("remaining")]
         public TimeSpan Remaining { get; set; }
-            
+
         /// <summary>
         /// This property contains the total estimated time the process will take
         /// </summary>
         [JsonProperty("total")]
         public TimeSpan Total { get; set; }
     }
-    
-    
+
+    /// <summary>
+    /// This class maintains the structure for a timer
+    /// /// </summary>
     public class Ticker
     {
         /// <summary>
         /// This property contains the internal stopwatch of the ticker
         /// </summary>
         private readonly Stopwatch _stopwatch = new Stopwatch();
-        
+
         /// <summary>
         /// This method stops the internal stopwatch then generates and returns a response
         /// </summary>
         /// <returns></returns>
-        protected TickerTimeTable Halt()
+        public TickerTimeTable Halt()
         {
             // Define our structure
             TickerTimeTable response = new TickerTimeTable();
@@ -71,7 +73,7 @@ namespace Fux.Core
         /// <param name="iteration"></param>
         /// <param name="total"></param>
         /// <returns></returns>
-        protected TickerTimeTable Halt(int iteration, int total)
+        public TickerTimeTable Halt(int iteration, int total)
         {
             // Define our structure
             TickerTimeTable response = new TickerTimeTable();
@@ -91,12 +93,12 @@ namespace Fux.Core
             // We're done, send the response
             return response;
         }
-        
+
         /// <summary>
         /// This method stops the internal stopwatch, generates a response, then resets and starts the internal stopwatch
         /// </summary>
         /// <returns></returns>
-        protected TickerTimeTable Reset()
+        public TickerTimeTable Reset()
         {
             // Define our structure
             TickerTimeTable response = new TickerTimeTable();
@@ -116,7 +118,7 @@ namespace Fux.Core
         /// <param name="iteration"></param>
         /// <param name="total"></param>
         /// <returns></returns>
-        protected TickerTimeTable Reset(int iteration, int total)
+        public TickerTimeTable Reset(int iteration, int total)
         {
             // Define our structure
             TickerTimeTable response = new TickerTimeTable();
@@ -140,12 +142,12 @@ namespace Fux.Core
             // We're done, send the response
             return response;
         }
-        
+
         /// <summary>
         /// This method stops the internal stopwatch, generates a response and then starts the internal stopwatch
         /// </summary>
         /// <returns></returns>
-        protected TickerTimeTable Tick()
+        public TickerTimeTable Tick()
         {
             // Define our structure
             TickerTimeTable response = new TickerTimeTable();
@@ -165,7 +167,7 @@ namespace Fux.Core
         /// <param name="iteration"></param>
         /// <param name="total"></param>
         /// <returns></returns>
-        protected TickerTimeTable Tick(int iteration, int total)
+        public TickerTimeTable Tick(int iteration, int total)
         {
             // Define our structure
             TickerTimeTable response = new TickerTimeTable();

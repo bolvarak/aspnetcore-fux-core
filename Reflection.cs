@@ -110,6 +110,32 @@ namespace Fux.Core
             Instantiate(type, arguments).Instance();
 
         /// <summary>
+        /// This method fluidly instantiates a typed object
+        /// </summary>
+        /// <typeparam name="TResult"></typeparam>
+        /// <returns></returns>
+        public static TResult Instance<TResult>() =>
+            Instance(typeof(TResult));
+
+        /// <summary>
+        /// This method fluidly instantiates a typed object with constructor arguments
+        /// </summary>
+        /// <param name="arguments"></param>
+        /// <typeparam name="TResult"></typeparam>
+        /// <returns></returns>
+        public static TResult Instance<TResult>(IEnumerable<object> arguments) =>
+            Instance(typeof(TResult), arguments);
+
+        /// <summary>
+        /// This method fluidly instantiates a typed object with constructor arguments
+        /// </summary>
+        /// <param name="arguments"></param>
+        /// <typeparam name="TResult"></typeparam>
+        /// <returns></returns>
+        public static TResult Instance<TResult>(params object[] arguments) =>
+            Instance(typeof(TResult), arguments);
+
+        /// <summary>
         /// This method fluidly instantiates an object from its system type
         /// </summary>
         /// <param name="type"></param>
