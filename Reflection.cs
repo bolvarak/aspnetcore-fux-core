@@ -12,6 +12,18 @@ namespace Fux.Core
     public static class Reflection
     {
         /// <summary>
+        /// This property contains a historical record of flattened types
+        /// /// </summary>
+        public static Dictionary<Type, Dictionary<string, PropertyInfo>> FlattenedTypes =
+            new Dictionary<Type, Dictionary<string, PropertyInfo>>();
+
+        /// <summary>
+        /// This property contains a historical record of reflected types
+        /// /// </summary>
+        public static Dictionary<Type, Reflection<dynamic>> ReflectedTypes =
+            new Dictionary<Type, Reflection<dynamic>>();
+
+        /// <summary>
         /// This method flattens an object and normalizes the property names to outer<paramref name="separator"/>inner
         /// NOTE:  This uses case insensitivity, keep that in mind when using this against POCOs
         /// </summary>
@@ -140,8 +152,19 @@ namespace Fux.Core
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static Reflection<dynamic> Instantiate(Type type) =>
-            (Reflection<dynamic>)Activator.CreateInstance(typeof(Reflection<>).MakeGenericType(new[] { type }));
+        public static Reflection<dynamic> Instantiate(Type type)
+        {
+            // Check to see if the reflection already exists
+            if (!ReflectedTypes.ContainsKey(type))
+            {
+                // Generate a new reflection
+                ReflectedTypes[type] =
+                    (Activator.CreateInstance(typeof(Reflection<>).MakeGenericType(new Type[] { type }))
+                    as Reflection<dynamic>);
+            }
+            // We're done, return the reflection
+            return ReflectedTypes[type];
+        }
 
         /// <summary>
         /// This method fluidly instantiates an object with constructor arguments from its system type
@@ -149,8 +172,19 @@ namespace Fux.Core
         /// <param name="type"></param>
         /// <param name="arguments"></param>
         /// <returns></returns>
-        public static Reflection<dynamic> Instantiate(Type type, IEnumerable<object> arguments) =>
-            (Reflection<dynamic>)Activator.CreateInstance(typeof(Reflection<>).MakeGenericType(new[] { type }), arguments);
+        public static Reflection<dynamic> Instantiate(Type type, IEnumerable<object> arguments)
+        {
+            // Check to see if the reflection already exists
+            if (!ReflectedTypes.ContainsKey(type))
+            {
+                // Generate a new reflection
+                ReflectedTypes[type] =
+                    (Activator.CreateInstance(typeof(Reflection<>).MakeGenericType(new Type[] { type }), arguments)
+                        as Reflection<dynamic>);
+            }
+            // We're done, return the reflection
+            return ReflectedTypes[type];
+        }
 
         /// <summary>
         /// This method fluidly instantiates an object with constructor arguments from its system type
@@ -281,12 +315,6 @@ namespace Fux.Core
     public class Reflection<T>
     {
         /// <summary>
-        /// This property contains a historical record of flattened types
-        /// /// </summary>
-        private static Dictionary<Type, Dictionary<string, PropertyInfo>> _flattenedTypes =
-            new Dictionary<Type, Dictionary<string, PropertyInfo>>();
-
-        /// <summary>
         /// This property contains the list of arguments to pass to the constructor
         /// </summary>
         private readonly List<object> _arguments = new List<object>();
@@ -328,10 +356,10 @@ namespace Fux.Core
         public static Dictionary<string, PropertyInfo> GetFlattenedType(Type type)
         {
             // Check the flattened types and noralize it inline
-            if (!_flattenedTypes.ContainsKey(type))
+            if (!Reflection.FlattenedTypes.ContainsKey(type))
                 Reflection.Instantiate(type).FlattenAndNormalize();
             // We're done, return the flattened object
-            return _flattenedTypes[type];
+            return Reflection.FlattenedTypes[type];
         }
 
         /// <summary>
@@ -447,7 +475,7 @@ namespace Fux.Core
         public Dictionary<string, PropertyInfo> FlattenAndNormalize(char separator = '.')
         {
             // Check for the existance of the type in the flattened properties and return it
-            if (!_flattenedTypes.ContainsKey(typeof(T)))
+            if (!Reflection.FlattenedTypes.ContainsKey(typeof(T)))
             {
                 // Define our properties
                 Dictionary<string, PropertyInfo> flattenedProperties = new Dictionary<string, PropertyInfo>();
@@ -463,10 +491,10 @@ namespace Fux.Core
                     flattenedProperties.Add(path, propertyInfo.Value);
                 }
                 // Add the flattened type to the instance
-                _flattenedTypes[typeof(T)] = flattenedProperties;
+                Reflection.FlattenedTypes[typeof(T)] = flattenedProperties;
             }
             // We're done, return the flattened object
-            return _flattenedTypes[typeof(T)];
+            return Reflection.FlattenedTypes[typeof(T)];
         }
 
         /// <summary>
