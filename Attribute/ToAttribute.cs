@@ -5,7 +5,7 @@ namespace Fux.Core.Attribute
     /// <summary>
     /// This attribute maintains the the correlation between convertible objects
     /// </summary>
-    [AttributeUsage(AttributeTargets.Class)]
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
     public class ToAttribute : System.Attribute
     {
         /// <summary>

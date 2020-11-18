@@ -5,7 +5,7 @@ namespace Fux.Core.Attribute
     /// <summary>
     /// This attribute maintains the correlation between properties when mapping to other objects
     /// </summary>
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
     public class ToPropertyAttribute : System.Attribute
     {
         /// <summary>
