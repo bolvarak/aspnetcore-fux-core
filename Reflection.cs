@@ -561,24 +561,36 @@ namespace Fux.Core
         /// <summary>
         /// This method instantiates an instance of our reflection
         /// </summary>
+        /// <param name="reset"></param>
         /// <returns></returns>
-        public T Instance()
+        public T Instance(bool reset = false)
         {
             // Check for an instance and instantiate the object
-            if (_instance == null) _instance = Reflection.Instance<T>();
+            if (_instance == null || reset)
+            {
+                // Check to see if we need  to send arguments to the constructor
+                if (_arguments.Any())
+                    _instance = (T)Activator.CreateInstance(typeof(T), _arguments);
+                else
+                    _instance = (T)Activator.CreateInstance(typeof(T));
+                // Build the property map
+                buildPropertyMap();
+                // Build the method map
+                buildMethodMap();
+            }
             // We're done, return the instance of the object
             return _instance;
         }
 
-        /// <summary>
-        /// This method invokes the method <paramref name="methodName"/>
-        /// and returning <typeparamref name="TValue"/> on <paramref name="instance"/>
-        /// </summary>
-        /// <param name="instance"></param>
-        /// <param name="methodName"></param>
-        /// <typeparam name="TValue"></typeparam>
-        /// <returns></returns>
-        public TValue Invoke<TValue>(T instance, string methodName) =>
+            /// <summary>
+            /// This method invokes the method <paramref name="methodName"/>
+            /// and returning <typeparamref name="TValue"/> on <paramref name="instance"/>
+            /// </summary>
+            /// <param name="instance"></param>
+            /// <param name="methodName"></param>
+            /// <typeparam name="TValue"></typeparam>
+            /// <returns></returns>
+            public TValue Invoke<TValue>(T instance, string methodName) =>
             InvokeMethod<TValue>(instance, methodName);
 
         /// <summary>
