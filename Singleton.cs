@@ -203,7 +203,7 @@ namespace Fux.Core
         public static T Instance<T>()
         {
             // Check for an existing singleton and instantiate the singleton
-            if (instance<T>() == null) _instances[typeof(T).GUID] = (new Reflection<T>().Instantiate() as Reflection<dynamic>);
+            if (instance<T>() == null) _instances[typeof(T).GUID] = (new Reflection<T>() as Reflection<dynamic>);
             // We're done, return the singleton
             return instance<T>();
         }
@@ -217,7 +217,7 @@ namespace Fux.Core
         public static T Instance<T>(bool reset)
         {
             // Check the reset flag and reset the instance
-            if (reset) _instances[typeof(T).GUID] = (new Reflection<T>().Instantiate() as Reflection<dynamic>);
+            if (reset) _instances[typeof(T).GUID] = (new Reflection<T>() as Reflection<dynamic>);
             // We're done, return the singleton
             return instance<T>();
         }
@@ -231,7 +231,7 @@ namespace Fux.Core
         public static T Instance<T>(IEnumerable<dynamic> arguments)
         {
             // Reset the singleton instance
-            _instances[typeof(T).GUID] = (new Reflection<T>(arguments).Instantiate() as Reflection<dynamic>);
+            _instances[typeof(T).GUID] = (new Reflection<T>(arguments) as Reflection<dynamic>);
             // We're done, return the singleton
             return instance<T>();
         }
@@ -242,7 +242,8 @@ namespace Fux.Core
         /// <param name="arguments"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static T Instance<T>(params dynamic[] arguments) => Instance(typeof(T), arguments);
+        public static T Instance<T>(params dynamic[] arguments) =>
+            Instance(typeof(T), arguments);
 
         /// <summary>
         /// This method fluidly adds a singleton to the instance and returns its reflection

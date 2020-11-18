@@ -12,18 +12,6 @@ namespace Fux.Core
     public static class Reflection
     {
         /// <summary>
-        /// This property contains a historical record of flattened types
-        /// /// </summary>
-        public static Dictionary<Guid, Dictionary<string, PropertyInfo>> FlattenedTypes =
-            new Dictionary<Guid, Dictionary<string, PropertyInfo>>();
-
-        /// <summary>
-        /// This property contains a historical record of reflected types
-        /// /// </summary>
-        public static Dictionary<Guid, Reflection<dynamic>> ReflectedTypes =
-            new Dictionary<Guid, Reflection<dynamic>>();
-
-        /// <summary>
         /// This method flattens an object and normalizes the property names to outer<paramref name="separator"/>inner
         /// NOTE:  This uses case insensitivity, keep that in mind when using this against POCOs
         /// </summary>
@@ -44,27 +32,16 @@ namespace Fux.Core
         /// <returns></returns>
         public static Dictionary<string, PropertyInfo> FlattenAndNormalize<TType, TNestedType>(char separator, string path,
             ref Dictionary<string, PropertyInfo> flattenedProperties) =>
-            Instantiate<TType>().FlattenAndNormalize<TNestedType>(separator, path, ref flattenedProperties);
+                Instantiate<TType>()
+                    .FlattenAndNormalize<TNestedType>(separator, path, ref flattenedProperties);
 
         /// <summary>
         /// This method fluidly instantiates a typed object
         /// </summary>
         /// <typeparam name="TResult"></typeparam>
         /// <returns></returns>
-        public static TResult Instance<TResult>()
-        {
-            // Localize the guid of the type
-            Guid typeGuid = typeof(TResult).GUID;
-            // Check to see if the reflection already exists
-            if (!ReflectedTypes.Where(t => t.Key.Equals(typeGuid)).Any())
-            {
-                // Generate a new reflection
-                ReflectedTypes[typeGuid] =
-                    (new Reflection<TResult>().Instantiate() as Reflection<dynamic>);
-            }
-            // We're done, return the reflection
-            return (TResult) ReflectedTypes[typeGuid].Instance();
-        }
+        public static TResult Instance<TResult>() =>
+            new Reflection<TResult>().Instance();
 
         /// <summary>
         /// This method fluidly instantiates a typed object with constructor arguments
@@ -72,20 +49,8 @@ namespace Fux.Core
         /// <param name="arguments"></param>
         /// <typeparam name="TResult"></typeparam>
         /// <returns></returns>
-        public static TResult Instance<TResult>(IEnumerable<object> arguments)
-        {
-            // Localize the guid of the type
-            Guid typeGuid = typeof(TResult).GUID;
-            // Check to see if the reflection already exists
-            if (!ReflectedTypes.Where(t => t.Key.Equals(typeGuid)).Any())
-            {
-                // Generate a new reflection
-                ReflectedTypes[typeGuid] =
-                    (new Reflection<TResult>(arguments).Instantiate() as Reflection<dynamic>);
-            }
-            // We're done, return the reflection
-            return (TResult) ReflectedTypes[typeGuid].Instance();
-        }
+        public static TResult Instance<TResult>(IEnumerable<object> arguments) =>
+            new Reflection<TResult>(arguments).Instance();
 
         /// <summary>
         /// This method fluidly instantiates a typed object with constructor arguments
@@ -101,22 +66,8 @@ namespace Fux.Core
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static Reflection<dynamic> Instantiate(Type type)
-        {
-            // Localize the guid of the type
-            Guid typeGuid = type.GUID;
-            // Check to see if the reflection already exists
-            if (!ReflectedTypes.Where(t => t.Key.Equals(typeGuid)).Any())
-            {
-                // Generate our generic type
-                Type genericType = typeof(Reflection<>).MakeGenericType(type);
-                // Generate a new reflection
-                ReflectedTypes[typeGuid] =
-                    (Activator.CreateInstance(genericType) as Reflection<dynamic>);
-            }
-            // We're done, return the reflection
-            return ReflectedTypes[typeGuid];
-        }
+        public static Reflection<dynamic> Instantiate(Type type) =>
+            (Activator.CreateInstance(typeof(Reflection<>).MakeGenericType(type)) as Reflection<dynamic>);
 
         /// <summary>
         /// This method fluidly instantiates an object with constructor arguments from its system type
@@ -124,22 +75,8 @@ namespace Fux.Core
         /// <param name="type"></param>
         /// <param name="arguments"></param>
         /// <returns></returns>
-        public static Reflection<dynamic> Instantiate(Type type, IEnumerable<object> arguments)
-        {
-            // Localize the guid of the type
-            Guid typeGuid = type.GUID;
-            // Check to see if the reflection already exists
-            if (!ReflectedTypes.Where(t => t.Key.Equals(typeGuid)).Any())
-            {
-                // Generate our generic type
-                Type genericType = typeof(Reflection<>).MakeGenericType(type);
-                // Generate a new reflection
-                ReflectedTypes[typeGuid] =
-                    (Activator.CreateInstance(genericType, arguments) as Reflection<dynamic>);
-            }
-            // We're done, return the reflection
-            return ReflectedTypes[typeGuid];
-        }
+        public static Reflection<dynamic> Instantiate(Type type, IEnumerable<object> arguments) =>
+            (Activator.CreateInstance(typeof(Reflection<>).MakeGenericType(type)) as Reflection<dynamic>);
 
         /// <summary>
         /// This method fluidly instantiates an object with constructor arguments from its system type
@@ -155,20 +92,8 @@ namespace Fux.Core
         /// </summary>
         /// <typeparam name="TResult"></typeparam>
         /// <returns></returns>
-        public static Reflection<TResult> Instantiate<TResult>()
-        {
-            // Localize the guid of the type
-            Guid typeGuid = typeof(TResult).GUID;
-            // Check to see if the reflection already exists
-            if (!ReflectedTypes.Where(t => t.Key.Equals(typeGuid)).Any())
-            {
-                // Generate a new reflection
-                ReflectedTypes[typeGuid] =
-                    (new Reflection<TResult>().Instantiate() as Reflection<dynamic>);
-            }
-            // We're done, return the reflection
-            return (ReflectedTypes[typeGuid] as Reflection<TResult>);
-        }
+        public static Reflection<TResult> Instantiate<TResult>() =>
+            new Reflection<TResult>();
 
         /// <summary>
         /// This method instantiates a reflection with contructor arguments
@@ -176,20 +101,8 @@ namespace Fux.Core
         /// <typeparam name="TResult"></typeparam>
         /// <param name="arguments"></param>
         /// <returns></returns>
-        public static Reflection<TResult> Instantiate<TResult>(IEnumerable<dynamic> arguments)
-        {
-            // Localize the guid of the type
-            Guid typeGuid = typeof(TResult).GUID;
-            // Check to see if the reflection already exists
-            if (!ReflectedTypes.Where(t => t.Key.Equals(typeGuid)).Any())
-            {
-                // Generate a new reflection
-                ReflectedTypes[typeGuid] =
-                    (new Reflection<TResult>(arguments).Instantiate() as Reflection<dynamic>);
-            }
-            // We're done, return the reflection
-            return (ReflectedTypes[typeGuid] as Reflection<TResult>);
-        }
+        public static Reflection<TResult> Instantiate<TResult>(IEnumerable<dynamic> arguments) =>
+            new Reflection<TResult>(arguments);
 
         /// <summary>
         /// This method instantiates a reflection with constructor arguments
@@ -208,7 +121,8 @@ namespace Fux.Core
         /// <typeparam name="TType"></typeparam>
         /// <typeparam name="TResult"></typeparam>
         public static TResult Invoke<TType, TResult>(string methodName) =>
-            Instantiate<TType>().Invoke<TResult>(methodName);
+            Instantiate<TType>()
+                .Invoke<TResult>(methodName);
 
         /// <summary>
         /// This method calls a method with arguments on the instantiated object
@@ -219,7 +133,8 @@ namespace Fux.Core
         /// <typeparam name="TResult"></typeparam>
         /// <returns></returns>
         public static TResult Invoke<TType, TResult>(string methodName, IEnumerable<object> arguments) =>
-            Instantiate<TType>().Invoke<TResult>(methodName, arguments);
+            Instantiate<TType>()
+                .Invoke<TResult>(methodName, arguments);
 
         /// <summary>
         /// This method calls a method with arguments on the instantiated object
@@ -228,7 +143,8 @@ namespace Fux.Core
         /// <param name="arguments"></param>
         /// <returns></returns>
         public static TResult Invoke<TType, TResult>(string methodName, params object[] arguments) =>
-            Instantiate<TType>().Invoke<TResult>(methodName, arguments);
+            Instantiate<TType>()
+                .Invoke<TResult>(methodName, arguments);
 
         /// <summary>
         /// This method calls a generic method on the instantiated object
@@ -239,7 +155,8 @@ namespace Fux.Core
         /// <typeparam name="TResult"></typeparam>
         /// <returns></returns>
         public static TResult InvokeGeneric<TType, TGenericType, TResult>(string methodName) =>
-            Instantiate<TType>().InvokeGeneric<TResult, TGenericType>(methodName);
+            Instantiate<TType>()
+                .InvokeGeneric<TResult, TGenericType>(methodName);
 
         /// <summary>
         /// This method calls a generic method with arguments on the object
@@ -251,7 +168,8 @@ namespace Fux.Core
         /// <typeparam name="TResult"></typeparam>
         /// <returns></returns>
         public static TResult InvokeGeneric<TType, TGenericType, TResult>(string methodName, IEnumerable<object> arguments) =>
-            Instantiate<TType>().InvokeGeneric<TResult, TGenericType>(methodName, arguments);
+            Instantiate<TType>()
+                .InvokeGeneric<TResult, TGenericType>(methodName, arguments);
 
         /// <summary>
         /// This method calls a generic method with arguments on the instantiated object
@@ -272,7 +190,8 @@ namespace Fux.Core
         /// <param name="propertyName"></param>
         /// <returns></returns>
         public static PropertyInfo PropertyInfo(Type type, string propertyName) =>
-            Instantiate(type).PropertyInfo(propertyName);
+            Instantiate(type)
+                .PropertyInfo(propertyName);
 
         /// <summary>
         /// This method returns the property information structure for a property from a lambda expression selector
@@ -281,7 +200,8 @@ namespace Fux.Core
         /// <param name="selector"></param>
         /// <returns></returns>
         public static PropertyInfo PropertyInfo(Type type, Expression<Func<dynamic, dynamic>> selector) =>
-            Instantiate(type).PropertyInfo(selector);
+            Instantiate(type)
+                .PropertyInfo(selector);
 
         /// <summary>
         /// This method returns the property name from a lambda selector expression
@@ -290,7 +210,8 @@ namespace Fux.Core
         /// <param name="selector"></param>
         /// <returns></returns>
         public static string PropertyName(Type type, Expression<Func<dynamic, dynamic>> selector) =>
-            Instantiate(type).PropertyName(selector);
+            Instantiate(type)
+                .PropertyName(selector);
 
         /// <summary>
         /// This method sets the value or property <paramref name="propertyName"/>
@@ -301,7 +222,8 @@ namespace Fux.Core
         /// <param name="value"></param>
         /// <returns></returns>
         public static Reflection<dynamic> Set(Type type, string propertyName, dynamic value) =>
-            Instantiate(type).Set<dynamic>(propertyName, value);
+            Instantiate(type)
+                .Set<dynamic>(propertyName, value);
 
         /// <summary>
         /// This method sets the value of the property found with <paramref name="selector"/>
@@ -312,7 +234,8 @@ namespace Fux.Core
         /// <param name="value"></param>
         /// <returns></returns>
         public static Reflection<dynamic> Set(Type type, Expression<Func<dynamic, dynamic>> selector, dynamic value) =>
-            Instantiate(type).Set<dynamic>(selector, value);
+            Instantiate(type)
+                .Set<dynamic>(selector, value);
     }
 
     /// <summary>
@@ -358,17 +281,10 @@ namespace Fux.Core
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static Dictionary<string, PropertyInfo> GetFlattenedType(Type type)
-        {
-            // Localize the guid of the type
-            Guid typeGuid = type.GUID;
-            // Check the flattened types and noramlize it inline
-            if (!Reflection.FlattenedTypes.ContainsKey(typeGuid))
-                Reflection.Instantiate(type)
+        public static Dictionary<string, PropertyInfo> GetFlattenedType(Type type) =>
+            Reflection
+                .Instantiate(type)
                     .FlattenAndNormalize();
-            // We're done, return the flattened object
-            return Reflection.FlattenedTypes[typeGuid];
-        }
 
         /// <summary>
         /// This method returns the property information for a flattened and normalized object
@@ -376,37 +292,28 @@ namespace Fux.Core
         /// </summary>
         /// <typeparam name="TType"></typeparam>
         /// <returns></returns>
-        public Dictionary<string, PropertyInfo> GetFlattenedType<TType>()
-        {
-            // Localize the guid of the type
-            Guid typeGuid = typeof(TType).GUID;
-            if (!Reflection.FlattenedTypes.ContainsKey(typeGuid))
-                Reflection.Instantiate(typeof(TType))
+        public Dictionary<string, PropertyInfo> GetFlattenedType<TType>() =>
+            new Reflection<TType>()
                     .FlattenAndNormalize();
-            // We're done, return the flattened object
-            return Reflection.FlattenedTypes[typeGuid];
-        }
 
         /// <summary>
         /// This method reflects and instantiates the object
         /// </summary>
-        public Reflection() => Instantiate();
+        public Reflection() { }
 
         /// <summary>
         /// This method reflects and instantiates the object with constructor arguments
         /// </summary>
         /// <param name="arguments"></param>
         public Reflection(IEnumerable<dynamic> arguments) =>
-            WithArguments(arguments)
-            .Instantiate();
+            WithArguments(arguments);
 
         /// <summary>
         /// This method reflects and instantiates the object with constructor arguments
         /// </summary>
         /// <param name="arguments"></param>
         public Reflection(params dynamic[] arguments) =>
-            WithArguments(arguments)
-            .Instantiate();
+            WithArguments(arguments);
 
         /// <summary>
         /// This method builds the property map on reflection
@@ -541,29 +448,21 @@ namespace Fux.Core
         /// <returns></returns>
         public Dictionary<string, PropertyInfo> FlattenAndNormalize(Type type, char separator = '.')
         {
-            // Localize our type guid
-            Guid typeGuid = type.GUID;
-            // Check for the existance of the type in the flattened properties and return it
-            if (!Reflection.FlattenedTypes.ContainsKey(typeGuid))
+            // Define our properties
+            Dictionary<string, PropertyInfo> flattenedProperties = new Dictionary<string, PropertyInfo>();
+            // Iterate over the properties
+            foreach (KeyValuePair<string, PropertyInfo> propertyInfo in Properties())
             {
-                // Define our properties
-                Dictionary<string, PropertyInfo> flattenedProperties = new Dictionary<string, PropertyInfo>();
-                // Iterate over the properties
-                foreach (KeyValuePair<string, PropertyInfo> propertyInfo in Properties())
-                {
-                    // Define the property path
-                    string path = propertyInfo.Value.Name.ToLower();
-                    // Check the property for a class and flatten it
-                    if (propertyInfo.Value.GetType().IsClass)
-                        FlattenAndNormalize(propertyInfo.Value.GetType(), separator, path, ref flattenedProperties);
-                    // Add the property to the response
-                    flattenedProperties[path] = propertyInfo.Value;
-                }
-                // Add the flattened type to the instance
-                Reflection.FlattenedTypes[typeGuid] = flattenedProperties;
+                // Define the property path
+                string path = propertyInfo.Value.Name.ToLower();
+                // Check the property for a class and flatten it
+                if (propertyInfo.Value.GetType().IsClass)
+                    FlattenAndNormalize(propertyInfo.Value.GetType(), separator, path, ref flattenedProperties);
+                // Add the property to the response
+                flattenedProperties[path] = propertyInfo.Value;
             }
             // We're done, return the flattened object
-            return Reflection.FlattenedTypes[typeGuid];
+            return flattenedProperties;
         }
 
         /// <summary>
@@ -665,22 +564,10 @@ namespace Fux.Core
         /// <returns></returns>
         public T Instance()
         {
-            // Make sure the object is instantiated
-            Instantiate();
-            // We're done, return the instance of the object
-            return _instance;
-        }
-
-        /// <summary>
-        /// This method generates an instance of the object
-        /// </summary>
-        /// <returns></returns>
-        public Reflection<T> Instantiate()
-        {
             // Check for an instance and instantiate the object
             if (_instance == null) _instance = Reflection.Instance<T>();
-            // We're done, return the instance
-            return this;
+            // We're done, return the instance of the object
+            return _instance;
         }
 
         /// <summary>
