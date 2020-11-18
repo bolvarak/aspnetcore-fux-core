@@ -452,7 +452,7 @@ namespace Fux.Core
         {
             // Localize our method information
             MethodInfo methodInfo = _methods
-                .Where(m => m.Key.Equals(methodName.ToLower()))
+                .Where(m => m.Key.Equals(methodName))
                 .Select(m => m.Value)
                 .FirstOrDefault();
             // Make sure we have a method
@@ -522,7 +522,7 @@ namespace Fux.Core
                     if (propertyInfo.Value.GetType().IsClass)
                         FlattenAndNormalize(propertyInfo.Value.GetType(), separator, path, ref flattenedProperties);
                     // Add the property to the response
-                    flattenedProperties.Add(path, propertyInfo.Value);
+                    flattenedProperties[path] = propertyInfo.Value;
                 }
                 // Add the flattened type to the instance
                 Reflection.FlattenedTypes[typeGuid] = flattenedProperties;
@@ -566,7 +566,7 @@ namespace Fux.Core
                     instance.FlattenAndNormalize(propertyInfo.Value.GetType(), separator, path,
                         ref flattenedProperties);
                 // Add the property to the response
-                flattenedProperties.Add(path, propertyInfo.Value);
+                flattenedProperties[path] = propertyInfo.Value;
             }
 
             // We're done, return the flattened object
@@ -872,7 +872,7 @@ namespace Fux.Core
         /// <param name="propertyName"></param>
         /// <returns></returns>
         public PropertyInfo PropertyInfo(string propertyName) =>
-            _properties.FirstOrDefault(p => p.Key.Equals(propertyName.ToLower())).Value;
+            _properties.FirstOrDefault(p => p.Key.Equals(propertyName)).Value;
 
         /// <summary>
         /// This method returns the property information structure for a property from a lambda expression selector
