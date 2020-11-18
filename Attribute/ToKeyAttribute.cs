@@ -9,6 +9,7 @@ namespace Fux.Core.Attribute
         /// This method instantiates our attribute with a key name
         /// </summary>
         /// <param name="keyName"></param>
-        public ToKeyAttribute(string keyName) : base(keyName) { }
+        /// <param name="allowEmptyValue"></param>
+        public ToKeyAttribute(string keyName, bool allowEmptyValue = true) : base(keyName, allowEmptyValue) { }
     }
 }

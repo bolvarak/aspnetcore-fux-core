@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Fux.Core.Attribute;
+using Newtonsoft.Json;
 
 namespace Fux.Core
 {
@@ -13,61 +14,46 @@ namespace Fux.Core
     public static class Convert
     {
         /// <summary>
-        /// This delegate provides structure for a callback to retrieve the value of a property with loose typing
-        /// </summary>
-        /// <param name="attribute"></param>
-        public delegate dynamic DelegateGetValueCallback(dynamic attribute);
-
-        /// <summary>
         /// This delegate provides structure for a callback to retrieve the value of a property with strict typing
         /// </summary>
         /// <param name="attribute"></param>
-        /// <typeparam name="TValue"></typeparam>
+        /// <param name="valueType"></param>
+        /// <param name="currentValue"></param>
         /// <typeparam name="TAttribute"></typeparam>
-        public delegate TValue DelegateGetValueCallback<out TValue, in TAttribute>(TAttribute attribute)
+        public delegate dynamic DelegateGetValueCallback<in TAttribute>(TAttribute attribute, Type valueType, dynamic currentValue)
             where TAttribute : FromPropertyAttribute;
-
-        /// <summary>
-        /// This delegate provides structure for a callback to retrieve the value of a property asynchronously
-        /// with loose typing
-        /// </summary>
-        /// <param name="attribute"></param>
-        public delegate Task<dynamic> DelegateGetValueCallbackAsync(dynamic attribute);
 
         /// <summary>
         /// This delegate provides structure for a callback to retrieve the value of a property asynchronously
         /// with strict typing
         /// </summary>
         /// <param name="attribute"></param>
-        /// <typeparam name="TValue"></typeparam>
+        /// <param name="valueType"></param>
+        /// <param name="currentValue"></param>
         /// <typeparam name="TAttribute"></typeparam>
-        public delegate Task<TValue> DelegateGetValueCallbackAsync<TValue, in TAttribute>(TAttribute attribute)
+        public delegate Task<dynamic> DelegateGetValueCallbackAsync<in TAttribute>(TAttribute attribute, Type valueType, dynamic currentValue)
             where TAttribute : FromPropertyAttribute;
 
         /// <summary>
-        /// This method provides all of the magic for converting <paramref name="sourceInstance"/> from
-        /// an object of type <paramref name="sourceInstance"/> to a new object of type <paramref name="targetType"/>
-        /// utilizing the From attribute in <paramref name="fromAttribute"/> and the To attribute in <paramref name="toAttribute"/>
+        /// This method provides all of the magic for converting <paramref name="source"/> from
+        /// an object of type <typeparamref name="TSource"/> to a new object of type <typeparamref name="TTarget"/>
+        /// utilizing the From attribute in <typeparamref name="TSourceAttribute"/> and the To attribute in <typeparamref name="TTargetAttribute"/>
         /// </summary>
-        /// <param name="sourceType"></param>
-        /// <param name="targetType"></param>
-        /// <param name="sourceInstance"></param>
-        /// <param name="fromAttribute"></param>
-        /// <param name="toAttribute"></param>
+        /// <param name="source"></param>
+        /// <typeparam name="TSource"></typeparam>
+        /// <typeparam name="TTarget"></typeparam>
+        /// <typeparam name="TSourceAttribute"></typeparam>
+        /// <typeparam name="TTargetAttribute"></typeparam>
         /// <returns></returns>
-        private static dynamic convertObjectToTarget(Type sourceType, Type targetType, dynamic sourceInstance,
-            Type fromAttribute, Type toAttribute)
+        private static TTarget ConvertObjectToTarget<TSource, TTarget, TSourceAttribute, TTargetAttribute>(TSource source)
+            where TSource : class, new() where TTarget : class, new() where TSourceAttribute : FromPropertyAttribute where TTargetAttribute : ToPropertyAttribute
         {
-            // Check the from attribute type and default it
-            if (fromAttribute == null) fromAttribute = typeof(FromPropertyAttribute);
-            // Check the to attribute type and default it
-            if (toAttribute == null) toAttribute = typeof(ToPropertyAttribute);
             // Reflect our source type
-            Reflection<dynamic> sourceReflection = Reflection.Instantiate(sourceType);
+            Reflection<TSource> sourceReflection = new Reflection<TSource>();
             // Reflect our target type
-            Reflection<dynamic> targetReflection = Reflection.Instantiate(targetType);
+            Reflection<TTarget> targetReflection = new Reflection<TTarget>();
             // Localize our target instance
-            dynamic targetInstance = targetReflection.Instance();
+            TTarget targetInstance = targetReflection.Instance();
             // Flatten and normalize the source's properties
             Dictionary<string, PropertyInfo> flattenedSource = sourceReflection.FlattenAndNormalize();
             // Flatten and normalize the target's properties
@@ -75,14 +61,11 @@ namespace Fux.Core
             // Iterate over the flattened target
             foreach (KeyValuePair<string, PropertyInfo> property in flattenedTarget)
             {
-                // Localize the normalized name
-                string normalizedName = property.Key;
                 // Localize the property information
                 PropertyInfo propertyInfo = property.Value;
                 // Set the value on the property of the target instance
                 propertyInfo.SetValue(targetInstance,
-                    getPropertyValueForTarget(propertyInfo, sourceInstance, flattenedSource, toAttribute,
-                        fromAttribute));
+                    GetPropertyValueForTarget<TSource, TSourceAttribute, TTargetAttribute>(propertyInfo, source, flattenedSource));
             }
             // We're done, return the populated target instance
             return targetInstance;
@@ -92,25 +75,27 @@ namespace Fux.Core
         /// This method grabs the value for the target property from the source instance
         /// </summary>
         /// <param name="targetProperty"></param>
-        /// <param name="sourceInstance"></param>
+        /// <param name="source"></param>
         /// <param name="flattenedSource"></param>
-        /// <param name="toAttribute"></param>
-        /// <param name="fromAttribute"></param>
+        /// <typeparam name="TSource"></typeparam>
+        /// <typeparam name="TSourceAttribute"></typeparam>
+        /// <typeparam name="TTargetAttribute"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
         /// <returns></returns>
-        private static dynamic getPropertyValueForTarget(PropertyInfo targetProperty, dynamic sourceInstance,
-            Dictionary<string, PropertyInfo> flattenedSource, Type toAttribute, Type fromAttribute)
+        private static TValue GetPropertyValueForTarget<TSource, TSourceAttribute, TTargetAttribute, TValue>(PropertyInfo targetProperty, TSource source, Dictionary<string, PropertyInfo> flattenedSource)
+                where TSource : class, new() where TTargetAttribute : ToPropertyAttribute where TSourceAttribute : FromPropertyAttribute
         {
             // Localize the normalized name of the property
             string normalizedTargetName =
-                (targetProperty.GetCustomAttributes(fromAttribute).FirstOrDefault() as FromPropertyAttribute)?.Name;
+                (targetProperty.GetCustomAttributes(typeof(TSourceAttribute)).FirstOrDefault() as FromPropertyAttribute)?.Name;
             // Check for the normalized target name in the source and return the value
             // We do this because we favor the ToPropertyAttribute
             if (flattenedSource.ContainsKey(normalizedTargetName))
-                return flattenedSource
+                return (TValue)flattenedSource
                     .Where(s => s.Key.Equals(normalizedTargetName))
                     .Select(s => s.Value)
                     .FirstOrDefault()
-                    ?.GetValue(sourceInstance);
+                    ?.GetValue(source);
 
             // Iterate over the properties in the flattened source
             foreach (KeyValuePair<string, PropertyInfo> property in flattenedSource)
@@ -120,12 +105,57 @@ namespace Fux.Core
                 // Localize the property information
                 PropertyInfo propertyInfo = property.Value;
                 // Check for a to attribute and return the value
-                if ((propertyInfo.GetCustomAttributes(toAttribute).FirstOrDefault() as ToPropertyAttribute).Name.Equals(
+                if ((propertyInfo.GetCustomAttributes(typeof(TTargetAttribute)).FirstOrDefault() as ToPropertyAttribute).Name.Equals(
                     normalizedSourceName))
-                    return propertyInfo.GetValue(sourceInstance);
+                    return (TValue)propertyInfo.GetValue(source);
                 // Check the property name and set the value
                 if (propertyInfo.Name.ToLower().Equals(targetProperty.Name.ToLower()))
-                    return propertyInfo.GetValue(sourceInstance);
+                    return (TValue)propertyInfo.GetValue(source);
+            }
+
+            // We're done, we have nothing to return
+            return default;
+        }
+
+        /// <summary>
+        /// This method grabs the value for the target property from the source instance
+        /// </summary>
+        /// <param name="targetProperty"></param>
+        /// <param name="source"></param>
+        /// <param name="flattenedSource"></param>
+        /// <typeparam name="TSource"></typeparam>
+        /// <typeparam name="TSourceAttribute"></typeparam>
+        /// <typeparam name="TTargetAttribute"></typeparam>
+        /// <returns></returns>
+        private static dynamic GetPropertyValueForTarget<TSource, TSourceAttribute, TTargetAttribute>(PropertyInfo targetProperty, TSource source, Dictionary<string, PropertyInfo> flattenedSource)
+                where TSource : class, new() where TTargetAttribute : ToPropertyAttribute where TSourceAttribute : FromPropertyAttribute
+        {
+            // Localize the normalized name of the property
+            string normalizedTargetName =
+                (targetProperty.GetCustomAttributes(typeof(TSourceAttribute)).FirstOrDefault() as FromPropertyAttribute)?.Name;
+            // Check for the normalized target name in the source and return the value
+            // We do this because we favor the ToPropertyAttribute
+            if (flattenedSource.ContainsKey(normalizedTargetName))
+                return flattenedSource
+                    .Where(s => s.Key.Equals(normalizedTargetName))
+                    .Select(s => s.Value)
+                    .FirstOrDefault()
+                    ?.GetValue(source);
+
+            // Iterate over the properties in the flattened source
+            foreach (KeyValuePair<string, PropertyInfo> property in flattenedSource)
+            {
+                // Localize the normalized name of the property
+                string normalizedSourceName = property.Key;
+                // Localize the property information
+                PropertyInfo propertyInfo = property.Value;
+                // Check for a to attribute and return the value
+                if ((propertyInfo.GetCustomAttributes(typeof(TTargetAttribute)).FirstOrDefault() as ToPropertyAttribute).Name.Equals(
+                    normalizedSourceName))
+                    return propertyInfo.GetValue(source);
+                // Check the property name and set the value
+                if (propertyInfo.Name.ToLower().Equals(targetProperty.Name.ToLower()))
+                    return propertyInfo.GetValue(source);
             }
 
             // We're done, we have nothing to return
@@ -136,19 +166,19 @@ namespace Fux.Core
         /// This method flattens and normalizes an object and executes a callback
         /// on each property to get its value
         /// </summary>
-        /// <param name="targetType"></param>
         /// <param name="callback"></param>
-        /// <param name="attributeType"></param>
+        /// <param name="setNewValueAfterCallback"></param>
+        /// <typeparam name="TTarget"></typeparam>
+        /// <typeparam name="TAttribute"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
         /// <returns></returns>
-        private static dynamic generateObjectWithCallback(Type targetType, DelegateGetValueCallback callback,
-            Type attributeType)
+        private static TTarget GenerateObjectWithCallback<TTarget, TAttribute>(DelegateGetValueCallback<TAttribute> callback, bool setNewValueAfterCallback = true)
+            where TTarget : class, new() where TAttribute : FromPropertyAttribute
         {
-            // Check the attribute type and default it
-            if (attributeType == null) attributeType = typeof(FromPropertyAttribute);
             // Reflect our target type
-            Reflection<dynamic> targetReflection = Reflection.Instantiate(targetType);
+            Reflection<TTarget> targetReflection = new Reflection<TTarget>();
             // Localize the instance
-            dynamic instance = targetReflection.Instance();
+            TTarget instance = targetReflection.Instance();
             // Flatten the object
             Dictionary<string, PropertyInfo> flattenedTarget = targetReflection.FlattenAndNormalize();
             // Iterate over the properties
@@ -162,12 +192,17 @@ namespace Fux.Core
                 foreach (System.Attribute attribute in propertyInfo.GetCustomAttributes())
                 {
                     // Check the attribute's type
-                    if (attribute.GetType() == attributeType)
+                    if (attribute.GetType().Equals(typeof(TAttribute)))
                     {
                         // Localize the attribute
-                        FromPropertyAttribute typedAttribute = (FromPropertyAttribute) attribute;
-                        // Execute the callback and set the value on the property of the object
-                        propertyInfo.SetValue(instance, callback.Invoke(typedAttribute));
+                        TAttribute typedAttribute = (TAttribute)attribute;
+                        // Localize the current value
+                        dynamic currentValue = propertyInfo.GetValue(instance);
+                        // Localize the new value
+                        dynamic newValue = callback.Invoke(typedAttribute, propertyInfo.PropertyType, currentValue);
+                        // Check the value set flag and reset the value into the property
+                        if (setNewValueAfterCallback)
+                            propertyInfo.SetValue(instance, newValue);
                     }
                 }
             }
@@ -180,19 +215,18 @@ namespace Fux.Core
         /// This method asynchronously flattens and normalizes an object and executes a callback
         /// on each property to get its value
         /// </summary>
-        /// <param name="targetType"></param>
         /// <param name="callback"></param>
-        /// <param name="attributeType"></param>
+        /// <param name="setNewValueAfterCallback"></param>
+        /// <typeparam name="TTarget"></typeparam>
+        /// <typeparam name="TAttribute"></typeparam>
         /// <returns></returns>
-        private static async Task<dynamic> generateObjectWithCallbackAsync(Type targetType,
-            DelegateGetValueCallbackAsync callback, Type attributeType)
+        private static async Task<TTarget> GenerateObjectWithCallbackAsync<TTarget, TAttribute>(DelegateGetValueCallbackAsync<TAttribute> callback, bool setNewValueAfterCallback = true)
+            where TTarget : class, new() where TAttribute : FromPropertyAttribute
         {
-            // Check the attribute type and default it
-            if (attributeType == null) attributeType = typeof(FromPropertyAttribute);
             // Reflect our target type
-            Reflection<dynamic> targetReflection = Reflection.Instantiate(targetType);
+            Reflection<TTarget> targetReflection = new Reflection<TTarget>();
             // Localize the instance
-            dynamic instance = targetReflection.Instance();
+            TTarget instance = targetReflection.Instance();
             // Flatten the object
             Dictionary<string, PropertyInfo> flattenedTarget = targetReflection.FlattenAndNormalize();
             // Iterate over the properties
@@ -206,12 +240,17 @@ namespace Fux.Core
                 foreach (System.Attribute attribute in propertyInfo.GetCustomAttributes())
                 {
                     // Check the attribute's type
-                    if (attribute.GetType() == attributeType)
+                    if (attribute.GetType().Equals(typeof(TAttribute)))
                     {
                         // Localize the attribute
-                        FromPropertyAttribute typedAttribute = (FromPropertyAttribute) attribute;
-                        // Execute the callback and set the value on the property of the object
-                        propertyInfo.SetValue(instance, await callback.Invoke(typedAttribute));
+                        TAttribute typedAttribute = (TAttribute)attribute;
+                        // Localize the current value
+                        dynamic currentValue = propertyInfo.GetValue(instance);
+                        // Localize the new value
+                        dynamic newValue = await callback.Invoke(typedAttribute, propertyInfo.PropertyType, currentValue);
+                        // Check the value set flag and reset the value into the property
+                        if (setNewValueAfterCallback)
+                            propertyInfo.SetValue(instance, newValue);
                     }
                 }
             }
@@ -221,119 +260,176 @@ namespace Fux.Core
         }
 
         /// <summary>
-        /// This method converts <paramref name="sourceInstance"/> of type <paramref name="sourceType"/>
-        /// to a new object of type <paramref name="targetType"/>
-        /// </summary>
-        /// <param name="sourceType"></param>
-        /// <param name="targetType"></param>
-        /// <param name="sourceInstance"></param>
-        /// <param name="fromAttribute"></param>
-        /// <param name="toAttribute"></param>
-        /// <returns></returns>
-        public static dynamic Map(Type sourceType, Type targetType, dynamic sourceInstance, Type fromAttribute = null,
-            Type toAttribute = null) =>
-            convertObjectToTarget(sourceType, targetType, sourceInstance, fromAttribute, toAttribute);
-
-        /// <summary>
-        /// This method converts <paramref name="sourceInstance"/> of type <typeparamref name="TFrom"/>
-        /// to a new object of type <typeparamref name="TTo"/>
-        /// </summary>
-        /// <param name="sourceInstance"></param>
-        /// <param name="fromAttribute"></param>
-        /// <param name="toAttribute"></param>
-        /// <typeparam name="TFrom"></typeparam>
-        /// <typeparam name="TTo"></typeparam>
-        /// <returns></returns>
-        public static TTo Map<TFrom, TTo>(TFrom sourceInstance, Type fromAttribute = null, Type toAttribute = null) =>
-            (TTo) convertObjectToTarget(typeof(TFrom), typeof(TTo), sourceInstance, fromAttribute, toAttribute);
-
-        /// <summary>
-        /// This method maps values to a new object instance from an external
-        /// source using <paramref name="callback"/> with a loose return type
+        /// This method converts a string to a type either through a
+        /// built-in <code>ToString()</code> or JSON serialization
         /// </summary>
         /// <param name="targetType"></param>
-        /// <param name="callback"></param>
-        /// <param name="fromAttribute"></param>
+        /// <param name="source"></param>
         /// <returns></returns>
-        public static dynamic MapWithValueGetter(Type targetType, DelegateGetValueCallback callback,
-            Type fromAttribute = null) => generateObjectWithCallback(targetType, callback, fromAttribute);
+        public static dynamic FromString(Type targetType, string source)
+        {
+            // Localize our nullable type
+            Type nullableType = Nullable.GetUnderlyingType(targetType);
+            // Check for a nullable type and reset the source type
+            if (nullableType != null)
+                targetType = nullableType;
+            // Check the nullable type and the value of the source
+            if (nullableType != null && source == null)
+                return Activator.CreateInstance(typeof(Nullable<>).MakeGenericType(nullableType));
+            // Check the value of the source
+            if (string.IsNullOrEmpty(source) || string.IsNullOrWhiteSpace(source)) return null;
+            // Check for a system type and return the system converted value
+            if (Fux.Core.Reflection.IsSystemType(targetType))
+                return System.Convert.ChangeType(source, targetType);
+            // Return the deserialized value of the object
+            return JsonConvert.DeserializeObject(source, targetType);
+        }
+
+        /// <summary>
+        /// This method converts a string to a type either through a
+        /// built-in <code>ToString()</code> or JSON serialization
+        /// </summary>
+        /// <typeparam name="TTarget"></typeparam>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        public static TTarget FromString<TTarget>(string source)
+        {
+            // Localize the target type
+            Type targetType = typeof(TTarget);
+            // Localize our nullable type
+            Type nullableType = Nullable.GetUnderlyingType(targetType);
+            // Check for a nullable type and reset the source type
+            if (nullableType != null)
+                targetType = nullableType;
+            // Check the nullable type and the value of the source
+            if (nullableType != null && source == null)
+                return (TTarget)Activator.CreateInstance(typeof(Nullable<>).MakeGenericType(nullableType));
+            // Check the value of the source
+            if (string.IsNullOrEmpty(source) || string.IsNullOrWhiteSpace(source)) return default;
+            // Check for a system type and return the system converted value
+            if (Fux.Core.Reflection.IsSystemType(targetType))
+                return (TTarget)System.Convert.ChangeType(source, targetType);
+            // Return the deserialized value of the object
+            return JsonConvert.DeserializeObject<TTarget>(source);
+        }
+
+        /// <summary>
+        /// This method converts <paramref name="source"/> of type <typeparamref name="TSource"/>
+        /// to a new object of type <typeparamref name="TTarget"/>
+        /// </summary>
+        /// <param name="source"></param>
+        /// <typeparam name="TSource"></typeparam>
+        /// <typeparam name="TTarget"></typeparam>
+        /// <typeparam name="TSourceAttribute"></typeparam>
+        /// <typeparam name="TTargetAttribute"></typeparam>
+        /// <returns></returns>
+        public static TTarget Map<TSource, TTarget, TSourceAttribute, TTargetAttribute>(TSource source)
+            where TSource : class, new() where TTarget : class, new() where TSourceAttribute : FromPropertyAttribute where TTargetAttribute : ToPropertyAttribute =>
+                ConvertObjectToTarget<TSource, TTarget, TSourceAttribute, TTargetAttribute>(source);
 
         /// <summary>
         /// This method maps values to a new object instance <typeparamref name="TTarget"/> from an external
         /// source using <paramref name="callback"/> with a strict return type
         /// </summary>
         /// <param name="callback"></param>
+        /// <param name="setNewValueAfterCallback"></param>
         /// <typeparam name="TTarget"></typeparam>
-        /// <typeparam name="TValue"></typeparam>
         /// <typeparam name="TAttribute"></typeparam>
         /// <returns></returns>
         public static TTarget
-            MapWithValueGetter<TTarget, TValue, TAttribute>(DelegateGetValueCallback<TValue, TAttribute> callback)
-            where TAttribute : FromPropertyAttribute => generateObjectWithCallback(typeof(TTarget),
-            (callback as DelegateGetValueCallback), typeof(TAttribute));
-
-        /// <summary>
-        /// This method asynchronously maps values to a new object instance from an external
-        /// source using <paramref name="callback"/> with a loose return type
-        /// </summary>
-        /// <param name="targetType"></param>
-        /// <param name="callback"></param>
-        /// <param name="fromAttribute"></param>
-        /// <returns></returns>
-        public static Task<dynamic> MapWithValueGetterAsync(Type targetType, DelegateGetValueCallbackAsync callback,
-            Type fromAttribute = null) => generateObjectWithCallbackAsync(targetType, callback, fromAttribute);
+            MapWithValueGetter<TTarget, TAttribute>(DelegateGetValueCallback<TAttribute> callback, bool setNewValueAfterCallback = true)
+                where TTarget : class, new() where TAttribute : FromPropertyAttribute =>
+                    GenerateObjectWithCallback<TTarget, TAttribute>(callback, setNewValueAfterCallback);
 
         /// <summary>
         /// This method asynchronously maps values to a new object instance <typeparamref name="TTarget"/> from an external
         /// source using <paramref name="callback"/> with a strict return type 
         /// </summary>
         /// <param name="callback"></param>
+        /// <param name="setNewValueAfterCallback"></param>
         /// <typeparam name="TTarget"></typeparam>
-        /// <typeparam name="TValue"></typeparam>
         /// <typeparam name="TAttribute"></typeparam>
         /// <returns></returns>
         public static Task<TTarget>
-            MapWithValueGetterAsync<TTarget, TValue, TAttribute>(
-                DelegateGetValueCallbackAsync<TValue, TAttribute> callback) where TAttribute : FromPropertyAttribute =>
-            (generateObjectWithCallbackAsync(typeof(TTarget), (callback as DelegateGetValueCallbackAsync),
-                typeof(TAttribute)) as Task<TTarget>);
+            MapWithValueGetterAsync<TTarget, TAttribute>(
+                DelegateGetValueCallbackAsync<TAttribute> callback, bool setNewValueAfterCallback = true)
+                    where TTarget : class, new() where TAttribute : FromPropertyAttribute =>
+                        GenerateObjectWithCallbackAsync<TTarget, TAttribute>(callback, setNewValueAfterCallback);
+
+        /// <summary>
+        /// This method converts a type to a string either through a
+        /// built-in <code>ToString()</code> or JSON serialization
+        /// </summary>
+        /// <param name="sourceType"></param>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        public static string ToString(Type sourceType, dynamic source)
+        {
+            // Localize our target type
+            Type targetType = typeof(string);
+            // Check for a system type and return the system converted value
+            if (Fux.Core.Reflection.IsSystemType(sourceType))
+                return System.Convert.ChangeType(source, targetType);
+            // Return the serialized value of the object
+            return JsonConvert.SerializeObject(source, Fux.Core.Global.JsonSerializerSettings);
+        }
+
+        /// <summary>
+        /// This method converts a type to a string either through a
+        /// built-in <code>ToString()</code> or JSON serialization
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        public static string ToString<TSource>(TSource source)
+        {
+            // Localize our source type
+            Type sourceType = typeof(TSource);
+            // Localize our target type
+            Type targetType = typeof(string);
+            // Check for a system type and return the system converted value
+            if (Fux.Core.Reflection.IsSystemType(sourceType))
+                return (string)System.Convert.ChangeType(source, targetType);
+            // Return the serialized value of the object
+            return JsonConvert.SerializeObject(source, Fux.Core.Global.JsonSerializerSettings);
+        }
     }
 
     /// <summary>
     /// This class provides a generic for convertible objects
     /// </summary>
-    /// <typeparam name="TFrom"></typeparam>
-    public static class Convert<TFrom>
+    /// <typeparam name="TSource"></typeparam>
+    public static class Convert<TSource> where TSource : class, new()
     {
         /// <summary>
-        /// This method maps <typeparamref name="TFrom"/> <paramref name="sourceInstance"/> to a
-        /// new instance of <typeparamref name="TTo"/>
+        /// This method maps <typeparamref name="TSource"/> <paramref name="source"/> to a
+        /// new instance of <typeparamref name="TTarget"/>
         /// </summary>
-        /// <param name="sourceInstance"></param>
-        /// <param name="fromAttribute"></param>
-        /// <param name="toAttribute"></param>
+        /// <param name="source"></param>
         /// <returns></returns>
-        /// <typeparam name="TTo"></typeparam>
-        public static TTo Map<TTo>(TFrom sourceInstance, Type fromAttribute = null, Type toAttribute = null) =>
-            Convert.Map<TFrom, TTo>(sourceInstance, fromAttribute, toAttribute);
+        /// <typeparam name="TTarget"></typeparam>
+        /// <typeparam name="TSourceAttribute"></typeparam>
+        /// <typeparam name="TTargetAttribute"></typeparam>
+        public static TTarget Map<TTarget, TSourceAttribute, TTargetAttribute>(TSource source)
+                where TTarget : class, new() where TSourceAttribute : FromPropertyAttribute where TTargetAttribute : ToPropertyAttribute =>
+            Convert<TSource, TTarget>.Map<TSourceAttribute, TTargetAttribute>(source);
     }
 
     /// <summary>
     /// This class provides a generic for convertible objects
     /// </summary>
-    /// <typeparam name="TFrom"></typeparam>
-    /// <typeparam name="TTo"></typeparam>
-    public static class Convert<TFrom, TTo>
+    /// <typeparam name="TSource"></typeparam>
+    /// <typeparam name="TTarget"></typeparam>
+    public static class Convert<TSource, TTarget> where TSource : class, new() where TTarget : class, new()
     {
         /// <summary>
-        /// This method maps <typeparamref name="TFrom"/> <paramref name="sourceInstance"/> to a
-        /// new instance of <typeparamref name="TTo"/>
+        /// This method maps <typeparamref name="TSource"/> <paramref name="source"/> to a
+        /// new instance of <typeparamref name="TTarget"/>
         /// </summary>
-        /// <param name="sourceInstance"></param>
-        /// <param name="fromAttribute"></param>
-        /// <param name="toAttribute"></param>
+        /// <param name="source"></param>
         /// <returns></returns>
-        public static TTo Map(TFrom sourceInstance, Type fromAttribute = null, Type toAttribute = null) =>
-            Convert.Map<TFrom, TTo>(sourceInstance, fromAttribute, toAttribute);
+        public static TTarget Map<TSourceAttribute, TTargetAttribute>(TSource source)
+            where TSourceAttribute : FromPropertyAttribute where TTargetAttribute : ToPropertyAttribute =>
+            Convert.Map<TSource, TTarget, TSourceAttribute, TTargetAttribute>(source);
     }
 }

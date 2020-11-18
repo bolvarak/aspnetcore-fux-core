@@ -6,6 +6,7 @@
     <Description>
       This client library is just a collection of potentially useful things
     </Description>
+    <DocumentationFile>https://raw.githubusercontent.com/bolvarak/aspnetcore-fux-examples/main/Readme.md</DocumentationFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>Fux.Core</PackageId>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -15,7 +16,7 @@
     <RepositoryType>git</RepositoryType>
     <RootNamespace>Fux.Core</RootNamespace>
     <TargetFramework>net5.0</TargetFramework>
-    <Version>1.0.18</Version>
+    <Version>1.1.0</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <PlatformTarget>x64</PlatformTarget>
