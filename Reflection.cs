@@ -51,8 +51,18 @@ namespace Fux.Core
         /// </summary>
         /// <typeparam name="TResult"></typeparam>
         /// <returns></returns>
-        public static TResult Instance<TResult>() =>
-            new Reflection<TResult>().Instance();
+        public static TResult Instance<TResult>()
+        {
+            // Check to see if the reflection already exists
+            if (!ReflectedTypes.Where(t => t.Key.FullName.Equals(typeof(TResult).FullName)).Any())
+            {
+                // Generate a new reflection
+                ReflectedTypes[typeof(TResult)] =
+                    (new Reflection<TResult>().Instantiate() as Reflection<dynamic>);
+            }
+            // We're done, return the reflection
+            return (TResult) ReflectedTypes[typeof(TResult)].Instance();
+        }
 
         /// <summary>
         /// This method fluidly instantiates a typed object with constructor arguments
@@ -60,8 +70,18 @@ namespace Fux.Core
         /// <param name="arguments"></param>
         /// <typeparam name="TResult"></typeparam>
         /// <returns></returns>
-        public static TResult Instance<TResult>(IEnumerable<object> arguments) =>
-            new Reflection<TResult>(arguments).Instance();
+        public static TResult Instance<TResult>(IEnumerable<object> arguments)
+        {
+            // Check to see if the reflection already exists
+            if (!ReflectedTypes.Where(t => t.Key.FullName.Equals(typeof(TResult).FullName)).Any())
+            {
+                // Generate a new reflection
+                ReflectedTypes[typeof(TResult)] =
+                    (new Reflection<TResult>(arguments).Instantiate() as Reflection<dynamic>);
+            }
+            // We're done, return the reflection
+            return (TResult) ReflectedTypes[typeof(TResult)].Instance();
+        }
 
         /// <summary>
         /// This method fluidly instantiates a typed object with constructor arguments
@@ -70,7 +90,7 @@ namespace Fux.Core
         /// <typeparam name="TResult"></typeparam>
         /// <returns></returns>
         public static TResult Instance<TResult>(params object[] arguments) =>
-            new Reflection<TResult>(arguments).Instance();
+            Instance<TResult>(arguments);
 
         /// <summary>
         /// This method fluidly instantiates an object from its system type
@@ -80,12 +100,13 @@ namespace Fux.Core
         public static Reflection<dynamic> Instantiate(Type type)
         {
             // Check to see if the reflection already exists
-            if (!ReflectedTypes.Where(t => t.Key.GenericTypeArguments[0] == type).Any())
+            if (!ReflectedTypes.Where(t => t.Key.GenericTypeArguments[0].FullName == type.FullName).Any())
             {
+                // Generate our generic type
+                Type genericType = typeof(Reflection<>).MakeGenericType(type);
                 // Generate a new reflection
                 ReflectedTypes[type] =
-                    (Activator.CreateInstance(typeof(Reflection<>).MakeGenericType(new Type[] { type }))
-                    as Reflection<dynamic>);
+                    (Activator.CreateInstance(genericType) as Reflection<dynamic>);
             }
             // We're done, return the reflection
             return ReflectedTypes[type];
@@ -102,10 +123,11 @@ namespace Fux.Core
             // Check to see if the reflection already exists
             if (!ReflectedTypes.Where(t => t.Key.FullName.Equals(type.FullName)).Any())
             {
+                // Generate our generic type
+                Type genericType = typeof(Reflection<>).MakeGenericType(type);
                 // Generate a new reflection
                 ReflectedTypes[type] =
-                    (Activator.CreateInstance(typeof(Reflection<>).MakeGenericType(new Type[] { type }), arguments)
-                    as Reflection<dynamic>);
+                    (Activator.CreateInstance(genericType, arguments) as Reflection<dynamic>);
             }
             // We're done, return the reflection
             return ReflectedTypes[type];
@@ -117,7 +139,7 @@ namespace Fux.Core
         /// <param name="type"></param>
         /// <param name="arguments"></param>
         /// <returns></returns>
-        public static Reflection<dynamic> Instantiate(Type type, params object[] arguments) =>
+        public static Reflection<dynamic> Instantiate(Type type, params dynamic[] arguments) =>
             Instantiate(type, arguments);
 
         /// <summary>
@@ -125,8 +147,18 @@ namespace Fux.Core
         /// </summary>
         /// <typeparam name="TResult"></typeparam>
         /// <returns></returns>
-        public static Reflection<TResult> Instantiate<TResult>() =>
-            new Reflection<TResult>().Instantiate();
+        public static Reflection<TResult> Instantiate<TResult>()
+        {
+            // Check to see if the reflection already exists
+            if (!ReflectedTypes.Where(t => t.Key.FullName.Equals(typeof(TResult).FullName)).Any())
+            {
+                // Generate a new reflection
+                ReflectedTypes[typeof(TResult)] =
+                    (new Reflection<TResult>().Instantiate() as Reflection<dynamic>);
+            }
+            // We're done, return the reflection
+            return (ReflectedTypes[typeof(TResult)] as Reflection<TResult>);
+        }
 
         /// <summary>
         /// This method instantiates a reflection with contructor arguments
@@ -134,8 +166,18 @@ namespace Fux.Core
         /// <typeparam name="TResult"></typeparam>
         /// <param name="arguments"></param>
         /// <returns></returns>
-        public static Reflection<TResult> Instantiate<TResult>(IEnumerable<object> arguments) =>
-            new Reflection<TResult>(arguments).Instantiate();
+        public static Reflection<TResult> Instantiate<TResult>(IEnumerable<dynamic> arguments)
+        {
+            // Check to see if the reflection already exists
+            if (!ReflectedTypes.Where(t => t.Key.FullName.Equals(typeof(TResult).FullName)).Any())
+            {
+                // Generate a new reflection
+                ReflectedTypes[typeof(TResult)] =
+                    (new Reflection<TResult>(arguments).Instantiate() as Reflection<dynamic>);
+            }
+            // We're done, return the reflection
+            return (ReflectedTypes[typeof(TResult)] as Reflection<TResult>);
+        }
 
         /// <summary>
         /// This method instantiates a reflection with constructor arguments
@@ -144,7 +186,7 @@ namespace Fux.Core
         /// <param name="arguments"></param>
         /// <returns></returns>
         public static Reflection<TResult> Instantiate<TResult>(params object[] arguments) =>
-            new Reflection<TResult>(arguments).Instantiate();
+            Instantiate<TResult>(arguments);
 
         /// <summary>
         /// This method calls a method on the instantiated object
@@ -270,7 +312,7 @@ namespace Fux.Core
         /// <summary>
         /// This property contains the list of arguments to pass to the constructor
         /// </summary>
-        private readonly List<object> _arguments = new List<object>();
+        private readonly List<dynamic> _arguments = new List<dynamic>();
 
         /// <summary>
         /// This property contains the instance of our reflection
@@ -333,13 +375,13 @@ namespace Fux.Core
         /// This method reflects and instantiates the object with constructor arguments
         /// </summary>
         /// <param name="arguments"></param>
-        public Reflection(IEnumerable<object> arguments) => WithArguments(arguments).Instantiate();
+        public Reflection(IEnumerable<dynamic> arguments) => WithArguments(arguments).Instantiate();
 
         /// <summary>
         /// This method reflects and instantiates the object with constructor arguments
         /// </summary>
         /// <param name="arguments"></param>
-        public Reflection(params object[] arguments) => WithArguments(arguments).Instantiate();
+        public Reflection(params dynamic[] arguments) => WithArguments(arguments).Instantiate();
 
         /// <summary>
         /// This method localizes the property information from a lambda selector expressions
@@ -378,7 +420,7 @@ namespace Fux.Core
         /// <param name="arguments"></param>
         /// <param name="genericType"></param>
         /// <returns></returns>
-        protected TValue InvokeMethod<TValue>(T instance, string methodName, IEnumerable<object> arguments = null,
+        protected TValue InvokeMethod<TValue>(T instance, string methodName, IEnumerable<dynamic> arguments = null,
             Type genericType = null)
         {
             // Localize our method information
@@ -551,7 +593,7 @@ namespace Fux.Core
         /// <typeparam name="TValue"></typeparam>
         /// <returns></returns>
         public TValue Get<TValue>(Expression<Func<T, TValue>> selector) =>
-            (TValue)Get(_instance, selector as Expression<Func<T, dynamic>>);
+            (TValue)Get(_instance, selector);
 
         /// <summary>
         /// This method instantiates an instance of our reflection
@@ -597,7 +639,7 @@ namespace Fux.Core
         /// <param name="arguments"></param>
         /// <typeparam name="TValue"></typeparam>
         /// <returns></returns>
-        public TValue Invoke<TValue>(T instance, string methodName, IEnumerable<object> arguments) =>
+        public TValue Invoke<TValue>(T instance, string methodName, IEnumerable<dynamic> arguments) =>
             InvokeMethod<TValue>(instance, methodName, arguments);
 
         /// <summary>
@@ -609,7 +651,7 @@ namespace Fux.Core
         /// <param name="arguments"></param>
         /// <typeparam name="TValue"></typeparam>
         /// <returns></returns>
-        public TValue Invoke<TValue>(T instance, string methodName, params object[] arguments) =>
+        public TValue Invoke<TValue>(T instance, string methodName, params dynamic[] arguments) =>
             InvokeMethod<TValue>(instance, methodName, arguments);
 
         /// <summary>
@@ -708,7 +750,7 @@ namespace Fux.Core
         /// <typeparam name="TValue"></typeparam>
         /// <typeparam name="TType"></typeparam>
         /// <returns></returns>
-        public TValue InvokeGeneric<TValue, TType>(T instance, string methodName, IEnumerable<object> arguments) =>
+        public TValue InvokeGeneric<TValue, TType>(T instance, string methodName, IEnumerable<dynamic> arguments) =>
             InvokeMethod<TValue>(instance, methodName, arguments, typeof(TType));
 
         /// <summary>
@@ -722,7 +764,7 @@ namespace Fux.Core
         /// <typeparam name="TValue"></typeparam>
         /// <typeparam name="TType"></typeparam>
         /// <returns></returns>
-        public TValue InvokeGeneric<TValue, TType>(T instance, string methodName, params object[] arguments) =>
+        public TValue InvokeGeneric<TValue, TType>(T instance, string methodName, params dynamic[] arguments) =>
             InvokeMethod<TValue>(instance, methodName, arguments, typeof(TType));
 
         /// <summary>
@@ -735,7 +777,7 @@ namespace Fux.Core
         /// <param name="arguments"></param>
         /// <typeparam name="TValue"></typeparam>
         /// <returns></returns>
-        public TValue InvokeGeneric<TValue>(Type genericType, string methodName, IEnumerable<object> arguments) =>
+        public TValue InvokeGeneric<TValue>(Type genericType, string methodName, IEnumerable<dynamic> arguments) =>
             InvokeMethod<TValue>(_instance, methodName, arguments, genericType);
 
         /// <summary>
@@ -748,7 +790,7 @@ namespace Fux.Core
         /// <param name="arguments"></param>
         /// <typeparam name="TValue"></typeparam>
         /// <returns></returns>
-        public TValue InvokeGeneric<TValue>(Type genericType, string methodName, params object[] arguments) =>
+        public TValue InvokeGeneric<TValue>(Type genericType, string methodName, params dynamic[] arguments) =>
             InvokeMethod<TValue>(_instance, methodName, arguments, genericType);
 
         /// <summary>
@@ -818,7 +860,7 @@ namespace Fux.Core
         /// <typeparam name="TValue"></typeparam>
         /// <returns></returns>
         public PropertyInfo PropertyInfo<TValue>(Expression<Func<T, TValue>> selector) =>
-            PropertyInfo(selector as Expression<Func<T, dynamic>>);
+            PropertyInfo(selector);
 
         /// <summary>
         /// This method returns the property name from a lambda selector expression
@@ -895,7 +937,7 @@ namespace Fux.Core
         /// </summary>
         /// <param name="argument"></param>
         /// <returns></returns>
-        public Reflection<T> WithArgument(object argument)
+        public Reflection<T> WithArgument(dynamic argument)
         {
             // Add the argument to the instance
             _arguments.Add(argument);
@@ -908,7 +950,7 @@ namespace Fux.Core
         /// </summary>
         /// <param name="arguments"></param>
         /// <returns></returns>
-        public Reflection<T> WithArguments(IEnumerable<object> arguments)
+        public Reflection<T> WithArguments(IEnumerable<dynamic> arguments)
         {
             // Clear the arguments in the instance
             _arguments.Clear();
@@ -923,6 +965,6 @@ namespace Fux.Core
         /// </summary>
         /// <param name="arguments"></param>
         /// <returns></returns>
-        public Reflection<T> WithArguments(params object[] arguments) => WithArguments(arguments.ToList());
+        public Reflection<T> WithArguments(params dynamic[] arguments) => WithArguments(arguments.ToList());
     }
 }
