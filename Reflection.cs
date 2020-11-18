@@ -80,7 +80,7 @@ namespace Fux.Core
         public static Reflection<dynamic> Instantiate(Type type)
         {
             // Check to see if the reflection already exists
-            if (!ReflectedTypes.Where(t => t.Key.FullName.Equals(type.FullName)).Any())
+            if (!ReflectedTypes.Where(t => t.Key.GetGenericTypeDefinition().Equals(type)).Any())
             {
                 // Generate a new reflection
                 ReflectedTypes[type] =
