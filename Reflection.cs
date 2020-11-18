@@ -486,7 +486,7 @@ namespace Fux.Core
             Type genericType = null)
         {
             // Localize our method information
-            MethodInfo methodInfo = _methods
+            MethodInfo methodInfo = Methods()
                 .Where(m => m.Key.Equals(methodName))
                 .Select(m => m.Value)
                 .FirstOrDefault();
@@ -677,10 +677,6 @@ namespace Fux.Core
         /// <returns></returns>
         public Reflection<T> Instantiate()
         {
-            // Ensure the property map
-            buildMethodMap();
-            // Ensure the method map
-            buildMethodMap();
             // Check for an instance and instantiate the object
             if (_instance == null) _instance = Reflection.Instance<T>();
             // We're done, return the instance
@@ -900,10 +896,18 @@ namespace Fux.Core
             InvokeMethod<TValue>(_instance, methodName, arguments, typeof(TType));
 
         /// <summary>
-        /// This method returns the properties from the instance
+        /// This method returns the methods from the reflection
         /// </summary>
         /// <returns></returns>
-        public Dictionary<string, PropertyInfo> Properties() => _properties;
+        public Dictionary<string, MethodInfo> Methods() =>
+            buildMethodMap();
+
+        /// <summary>
+        /// This method returns the properties from the reflection
+        /// </summary>
+        /// <returns></returns>
+        public Dictionary<string, PropertyInfo> Properties() =>
+            buildPropertyMap();
 
         /// <summary>
         /// This method returns the property information for a property
@@ -911,7 +915,7 @@ namespace Fux.Core
         /// <param name="propertyName"></param>
         /// <returns></returns>
         public PropertyInfo PropertyInfo(string propertyName) =>
-            buildPropertyMap().FirstOrDefault(p => p.Key.Equals(propertyName)).Value;
+            Properties().FirstOrDefault(p => p.Key.Equals(propertyName)).Value;
 
         /// <summary>
         /// This method returns the property information structure for a property from a lambda expression selector
