@@ -334,8 +334,7 @@ namespace Fux.Core
         /// <summary>
         /// This property contains the PropertyInfo objects for the properties in <typeparamref name="T"/>
         /// </summary>
-        private readonly Dictionary<string, PropertyInfo> _properties = new Dictionary<string, PropertyInfo>(
-            typeof(T).GetProperties().Select(p => new KeyValuePair<string, PropertyInfo>(p.Name, p)));
+        private Dictionary<string, PropertyInfo> _properties = null;
 
         /// <summary>
         /// This property contains our property selector lambda expressions
@@ -346,8 +345,7 @@ namespace Fux.Core
         /// <summary>
         /// This property contains the MethodInfo objects for the properties in <typeparamref name="T"/>
         /// </summary>
-        private readonly Dictionary<string, MethodInfo> _methods = new Dictionary<string, MethodInfo>(
-            typeof(T).GetMethods().Select(m => new KeyValuePair<string, MethodInfo>(m.Name, m)));
+        private Dictionary<string, MethodInfo> _methods = null;
 
         /// <summary>
         /// This property contains the type in which we will be reflecting
@@ -409,6 +407,43 @@ namespace Fux.Core
         public Reflection(params dynamic[] arguments) =>
             WithArguments(arguments)
             .Instantiate();
+
+        /// <summary>
+        /// This method builds the property map on reflection
+        /// </summary>
+        private Dictionary<string, PropertyInfo> buildPropertyMap()
+        {
+            // Check the property map
+            if (_properties == null)
+            {
+                // Instantiate the property map
+                _properties = new Dictionary<string, PropertyInfo>();
+                // Iterate over the properties and add them to the instance
+                foreach (PropertyInfo property in typeof(T).GetProperties())
+                    _properties[property.Name] = property;
+            }
+            // We're done, return the property map
+            return _properties;
+        }
+
+        /// <summary>
+        /// THis method builds the method map on reflection
+        /// </summary>
+        /// <returns></returns>
+        private Dictionary<string, MethodInfo> buildMethodMap()
+        {
+            // Check the method map
+            if (_methods == null)
+            {
+                // Intantiate the method map
+                _methods = new Dictionary<string, MethodInfo>();
+                // Iterate over the methods and add them to the instance
+                foreach (MethodInfo method in typeof(T).GetMethods())
+                    _methods[method.Name] = method;
+            }
+            // We're one, return the method map
+            return _methods;
+        }
 
         /// <summary>
         /// This method localizes the property information from a lambda selector expressions
@@ -642,6 +677,10 @@ namespace Fux.Core
         /// <returns></returns>
         public Reflection<T> Instantiate()
         {
+            // Ensure the property map
+            buildMethodMap();
+            // Ensure the method map
+            buildMethodMap();
             // Check for an instance and instantiate the object
             if (_instance == null) _instance = Reflection.Instance<T>();
             // We're done, return the instance
@@ -872,7 +911,7 @@ namespace Fux.Core
         /// <param name="propertyName"></param>
         /// <returns></returns>
         public PropertyInfo PropertyInfo(string propertyName) =>
-            _properties.FirstOrDefault(p => p.Key.Equals(propertyName)).Value;
+            buildPropertyMap().FirstOrDefault(p => p.Key.Equals(propertyName)).Value;
 
         /// <summary>
         /// This method returns the property information structure for a property from a lambda expression selector
