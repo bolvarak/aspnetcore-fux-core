@@ -27,99 +27,24 @@ namespace Fux.Core
         /// This method flattens an object and normalizes the property names to outer<paramref name="separator"/>inner
         /// NOTE:  This uses case insensitivity, keep that in mind when using this against POCOs
         /// </summary>
-        /// <param name="type"></param>
         /// <param name="separator"></param>
         /// <returns></returns>
-        public static Dictionary<string, PropertyInfo> FlattenAndNormalize(Type type, char separator = '.') =>
-            Instantiate(type).FlattenAndNormalize(separator);
+        public static Dictionary<string, PropertyInfo> FlattenAndNormalize<TType>(char separator = '.') =>
+            Instantiate<TType>().FlattenAndNormalize(separator);
 
         /// <summary>
-        /// This method flattens a nested object and normalizes the property names
-        /// to outer<paramref name="separator"/>inner
+        /// This method flattens and normalizes the property names to outer<paramref name="separator"/>inner of nested objects
         /// NOTE:  This uses case insensitivity, keep that in mind when using this against POCOs
         /// </summary>
-        /// <param name="type"></param>
+        /// <typeparam name="TType"></typeparam>
         /// <param name="separator"></param>
         /// <param name="path"></param>
         /// <param name="flattenedProperties"></param>
+        /// <typeparam name="TNestedType"></typeparam>
         /// <returns></returns>
-        public static Dictionary<string, PropertyInfo> FlattenAndNormalize(Type type, char separator, string path,
+        public static Dictionary<string, PropertyInfo> FlattenAndNormalize<TType, TNestedType>(char separator, string path,
             ref Dictionary<string, PropertyInfo> flattenedProperties) =>
-            Instantiate(type).FlattenAndNormalize(type, separator, path, ref flattenedProperties);
-
-        /// <summary>
-        /// This method flattens an object and normalizes the property names to outer<paramref name="separator"/>inner
-        /// NOTE:  This uses case insensitivity, keep that in mind when using this against POCOs
-        /// </summary>
-        /// <param name="type"></param>
-        /// <param name="separator"></param>
-        /// <returns></returns>
-        public static Dictionary<string, PropertyInfo> FlattenAndNormalize(Type type, string separator) =>
-            FlattenAndNormalize(type, separator.ToCharArray().First());
-
-        /// <summary>
-        /// This method flattens an object and normalizes the property names to outer<paramref name="separator"/>inner
-        /// NOTE:  This uses case insensitivity, keep that in mind when using this against POCOs
-        /// </summary>
-        /// <param name="separator"></param>
-        /// <returns></returns>
-        /// <typeparam name="TSource"></typeparam>
-        public static Dictionary<string, PropertyInfo> FlattenAndNormalize<TSource>(char separator = '.') =>
-            FlattenAndNormalize(typeof(TSource), separator);
-
-        /// <summary>
-        /// This method flattens an object and normalizes the property names to outer<paramref name="separator"/>inner
-        /// NOTE:  This uses case insensitivity, keep that in mind when using this against POCOs
-        /// </summary>
-        /// <param name="separator"></param>
-        /// <returns></returns>
-        /// <typeparam name="TSource"></typeparam>
-        public static Dictionary<string, PropertyInfo> FlattenAndNormalize<TSource>(string separator) =>
-            FlattenAndNormalize(typeof(TSource), separator.ToCharArray().First());
-
-        /// <summary>
-        /// This method returns a property's value from its name
-        /// </summary>
-        /// <param name="type"></param>
-        /// <param name="propertyName"></param>
-        /// <returns></returns>
-        public static dynamic Get(Type type, string propertyName) =>
-            Instantiate(type).Get<dynamic>(propertyName);
-
-        /// <summary>
-        /// This method returns the property's value from a lambda expression selector
-        /// </summary>
-        /// <param name="type"></param>
-        /// <param name="selector"></param>
-        /// <returns></returns>
-        public static dynamic Get(Type type, Expression<Func<dynamic, dynamic>> selector) =>
-            Instantiate(type).Get<dynamic>(selector);
-
-        /// <summary>
-        /// This method fluidly instantiates an object with constructor arguments
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public static dynamic Instance(Type type) =>
-            Instantiate(type).Instance();
-
-        /// <summary>
-        /// This method fluidly instantiates an object with constructor arguments
-        /// </summary>
-        /// <param name="type"></param>
-        /// <param name="arguments"></param>
-        /// <returns></returns>
-        public static dynamic Instance(Type type, IEnumerable<object> arguments) =>
-            Instantiate(type, arguments).Instance();
-
-        /// <summary>
-        /// This method fluidly instantiates an object with constructor arguments
-        /// </summary>
-        /// <param name="type"></param>
-        /// <param name="arguments"></param>
-        /// <returns></returns>
-        public static dynamic Instance(Type type, params object[] arguments) =>
-            Instantiate(type, arguments).Instance();
+            Instantiate<TType>().FlattenAndNormalize<TNestedType>(separator, path, ref flattenedProperties);
 
         /// <summary>
         /// This method fluidly instantiates a typed object
@@ -127,7 +52,7 @@ namespace Fux.Core
         /// <typeparam name="TResult"></typeparam>
         /// <returns></returns>
         public static TResult Instance<TResult>() =>
-            Instance(typeof(TResult));
+            new Reflection<TResult>().Instance();
 
         /// <summary>
         /// This method fluidly instantiates a typed object with constructor arguments
@@ -136,7 +61,7 @@ namespace Fux.Core
         /// <typeparam name="TResult"></typeparam>
         /// <returns></returns>
         public static TResult Instance<TResult>(IEnumerable<object> arguments) =>
-            Instance(typeof(TResult), arguments);
+            new Reflection<TResult>(arguments).Instance();
 
         /// <summary>
         /// This method fluidly instantiates a typed object with constructor arguments
@@ -145,7 +70,7 @@ namespace Fux.Core
         /// <typeparam name="TResult"></typeparam>
         /// <returns></returns>
         public static TResult Instance<TResult>(params object[] arguments) =>
-            Instance(typeof(TResult), arguments);
+            new Reflection<TResult>(arguments).Instance();
 
         /// <summary>
         /// This method fluidly instantiates an object from its system type
@@ -155,7 +80,7 @@ namespace Fux.Core
         public static Reflection<dynamic> Instantiate(Type type)
         {
             // Check to see if the reflection already exists
-            if (!ReflectedTypes.ContainsKey(type))
+            if (!ReflectedTypes.Where(t => t.Key.FullName.Equals(type.FullName)).Any())
             {
                 // Generate a new reflection
                 ReflectedTypes[type] =
@@ -175,12 +100,12 @@ namespace Fux.Core
         public static Reflection<dynamic> Instantiate(Type type, IEnumerable<object> arguments)
         {
             // Check to see if the reflection already exists
-            if (!ReflectedTypes.ContainsKey(type))
+            if (!ReflectedTypes.Where(t => t.Key.FullName.Equals(type.FullName)).Any())
             {
                 // Generate a new reflection
                 ReflectedTypes[type] =
                     (Activator.CreateInstance(typeof(Reflection<>).MakeGenericType(new Type[] { type }), arguments)
-                        as Reflection<dynamic>);
+                    as Reflection<dynamic>);
             }
             // We're done, return the reflection
             return ReflectedTypes[type];
@@ -196,67 +121,95 @@ namespace Fux.Core
             Instantiate(type, arguments);
 
         /// <summary>
+        /// This method instantiates a reflection
+        /// </summary>
+        /// <typeparam name="TResult"></typeparam>
+        /// <returns></returns>
+        public static Reflection<TResult> Instantiate<TResult>() =>
+            new Reflection<TResult>().Instantiate();
+
+        /// <summary>
+        /// This method instantiates a reflection with contructor arguments
+        /// </summary>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="arguments"></param>
+        /// <returns></returns>
+        public static Reflection<TResult> Instantiate<TResult>(IEnumerable<object> arguments) =>
+            new Reflection<TResult>(arguments).Instantiate();
+
+        /// <summary>
+        /// This method instantiates a reflection with constructor arguments
+        /// </summary>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="arguments"></param>
+        /// <returns></returns>
+        public static Reflection<TResult> Instantiate<TResult>(params object[] arguments) =>
+            new Reflection<TResult>(arguments).Instantiate();
+
+        /// <summary>
         /// This method calls a method on the instantiated object
         /// </summary>
-        /// <param name="type"></param>
         /// <param name="methodName"></param>
         /// <returns></returns>
-        public static dynamic Invoke(Type type, string methodName) =>
-            Instantiate(type).Invoke<dynamic>(methodName);
+        /// <typeparam name="TType"></typeparam>
+        /// <typeparam name="TResult"></typeparam>
+        public static TResult Invoke<TType, TResult>(string methodName) =>
+            Instantiate<TType>().Invoke<TResult>(methodName);
 
         /// <summary>
         /// This method calls a method with arguments on the instantiated object
         /// </summary>
-        /// <param name="type"></param>
         /// <param name="methodName"></param>
         /// <param name="arguments"></param>
+        /// <typeparam name="TType"></typeparam>
+        /// <typeparam name="TResult"></typeparam>
         /// <returns></returns>
-        public static dynamic Invoke(Type type, string methodName, IEnumerable<object> arguments) =>
-            Instantiate(type).Invoke<dynamic>(methodName, arguments);
+        public static TResult Invoke<TType, TResult>(string methodName, IEnumerable<object> arguments) =>
+            Instantiate<TType>().Invoke<TResult>(methodName, arguments);
 
         /// <summary>
         /// This method calls a method with arguments on the instantiated object
         /// </summary>
-        /// <param name="type"></param>
         /// <param name="methodName"></param>
         /// <param name="arguments"></param>
         /// <returns></returns>
-        public static dynamic Invoke(Type type, string methodName, params object[] arguments) =>
-            Instantiate(type).Invoke<dynamic>(methodName, arguments);
+        public static TResult Invoke<TType, TResult>(string methodName, params object[] arguments) =>
+            Instantiate<TType>().Invoke<TResult>(methodName, arguments);
 
         /// <summary>
         /// This method calls a generic method on the instantiated object
         /// </summary>
-        /// <param name="classType"></param>
-        /// <param name="methodType"></param>
         /// <param name="methodName"></param>
+        /// <typeparam name="TType"></typeparam>
+        /// <typeparam name="TGenericType"></typeparam>
+        /// <typeparam name="TResult"></typeparam>
         /// <returns></returns>
-        public static dynamic InvokeGeneric(Type classType, Type methodType, string methodName) =>
-            Instantiate(classType).InvokeGeneric<dynamic>(methodType, methodName);
+        public static TResult InvokeGeneric<TType, TGenericType, TResult>(string methodName) =>
+            Instantiate<TType>().InvokeGeneric<TResult, TGenericType>(methodName);
 
         /// <summary>
         /// This method calls a generic method with arguments on the object
         /// </summary>
-        /// <param name="classType"></param>
-        /// <param name="methodType"></param>
         /// <param name="methodName"></param>
         /// <param name="arguments"></param>
+        /// <typeparam name="TType"></typeparam>
+        /// <typeparam name="TGenericType"></typeparam>
+        /// <typeparam name="TResult"></typeparam>
         /// <returns></returns>
-        public static dynamic InvokeGeneric(Type classType, Type methodType, string methodName,
-            IEnumerable<object> arguments) =>
-            Instantiate(classType).InvokeGeneric<dynamic>(methodType, methodName, arguments);
+        public static TResult InvokeGeneric<TType, TGenericType, TResult>(string methodName, IEnumerable<object> arguments) =>
+            Instantiate<TType>().InvokeGeneric<TResult, TGenericType>(methodName, arguments);
 
         /// <summary>
         /// This method calls a generic method with arguments on the instantiated object
         /// </summary>
-        /// <param name="classType"></param>
-        /// <param name="methodType"></param>
         /// <param name="methodName"></param>
         /// <param name="arguments"></param>
+        /// <typeparam name="TType"></typeparam>
+        /// <typeparam name="TGenericType"></typeparam>
+        /// <typeparam name="TResult"></typeparam>
         /// <returns></returns>
-        public static dynamic InvokeGeneric(Type classType, Type methodType, string methodName,
-            params object[] arguments) =>
-            Instantiate(classType).InvokeGeneric<dynamic>(methodType, methodName, arguments);
+        public static TResult InvokeGeneric<TType, TGenericType, TResult>(string methodName, params object[] arguments) =>
+            InvokeGeneric<TType, TGenericType, TResult>(methodName, arguments);
 
         /// <summary>
         /// This method returns the property information for a property
@@ -472,10 +425,20 @@ namespace Fux.Core
         /// </summary>
         /// <param name="separator"></param>
         /// <returns></returns>
-        public Dictionary<string, PropertyInfo> FlattenAndNormalize(char separator = '.')
+        public Dictionary<string, PropertyInfo> FlattenAndNormalize(char separator = '.') =>
+            FlattenAndNormalize(typeof(T), separator);
+
+        /// <summary>
+        /// This method flattens an object and normalizes the property names to outer<paramref name="separator"/>inner
+        /// NOTE:  This uses case insensitivity, keep that in mind when using this against POCOs
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="separator"></param>
+        /// <returns></returns>
+        public Dictionary<string, PropertyInfo> FlattenAndNormalize(Type type, char separator = '.')
         {
             // Check for the existance of the type in the flattened properties and return it
-            if (!Reflection.FlattenedTypes.ContainsKey(typeof(T)))
+            if (!Reflection.FlattenedTypes.ContainsKey(type))
             {
                 // Define our properties
                 Dictionary<string, PropertyInfo> flattenedProperties = new Dictionary<string, PropertyInfo>();
@@ -491,11 +454,21 @@ namespace Fux.Core
                     flattenedProperties.Add(path, propertyInfo.Value);
                 }
                 // Add the flattened type to the instance
-                Reflection.FlattenedTypes[typeof(T)] = flattenedProperties;
+                Reflection.FlattenedTypes[type] = flattenedProperties;
             }
             // We're done, return the flattened object
-            return Reflection.FlattenedTypes[typeof(T)];
+            return Reflection.FlattenedTypes[type];
         }
+
+        /// <summary>
+        /// This method flattens an object and normalizes the property names to outer<paramref name="separator"/>inner
+        /// NOTE:  This uses case insensitivity, keep that in mind when using this against POCOs
+        /// </summary>
+        /// <param name="separator"></param>
+        /// <typeparam name="TType"></typeparam>
+        /// <returns></returns>
+        public Dictionary<string, PropertyInfo> FlattenAndNormalize<TType>(char separator = '.') =>
+            FlattenAndNormalize(typeof(TType), separator);
 
         /// <summary>
         /// This method flattens a nested object and normalizes the property names
@@ -530,14 +503,18 @@ namespace Fux.Core
         }
 
         /// <summary>
-        /// This method flattens an object and normalizes the property names to outer<paramref name="separator"/>inner
+        /// This method flattens a nested object and normalizes the property names
+        /// to outer<paramref name="separator"/>inner
         /// NOTE:  This uses case insensitivity, keep that in mind when using this against POCOs
         /// </summary>
-        /// <param name="type"></param>
         /// <param name="separator"></param>
+        /// <param name="path"></param>
+        /// <param name="flattenedProperties"></param>
+        /// <typeparam name="TNestedType"></typeparam>
         /// <returns></returns>
-        public Dictionary<string, PropertyInfo> FlattenAndNormalize(Type type, string separator) =>
-            FlattenAndNormalize(separator.ToCharArray().First());
+        public Dictionary<string, PropertyInfo> FlattenAndNormalize<TNestedType>(char separator, string path,
+            ref Dictionary<string, PropertyInfo> flattenedProperties) =>
+            FlattenAndNormalize(typeof(TNestedType), separator, path, ref flattenedProperties);
 
         /// <summary>
         /// This method returns the property value from the property's name and provided instance
@@ -547,15 +524,6 @@ namespace Fux.Core
         /// <returns></returns>
         public TValue Get<TValue>(T instance, string propertyName) =>
             (TValue)PropertyInfo(propertyName)?.GetValue(instance);
-
-        /// <summary>
-        /// This method returns the property value from a lambda expression selector and provided instance
-        /// </summary>
-        /// <param name="instance"></param>
-        /// <param name="selector"></param>
-        /// <returns></returns>
-        public TValue Get<TValue>(T instance, Expression<Func<T, dynamic>> selector) =>
-            (TValue)PropertyInfo(selector)?.GetValue(instance);
 
         /// <summary>
         /// This method returns the property value from a lambda expression selector and provided instance
@@ -604,7 +572,7 @@ namespace Fux.Core
         public Reflection<T> Instantiate()
         {
             // Check for an instance and instantiate the object
-            if (_instance == null) _instance = Reflection.Instance(typeof(T));
+            if (_instance == null) _instance = Reflection.Instance<T>();
             // We're done, return the instance
             return this;
         }
