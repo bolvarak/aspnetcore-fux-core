@@ -170,7 +170,6 @@ namespace Fux.Core
         /// <param name="setNewValueAfterCallback"></param>
         /// <typeparam name="TTarget"></typeparam>
         /// <typeparam name="TAttribute"></typeparam>
-        /// <typeparam name="TValue"></typeparam>
         /// <returns></returns>
         private static TTarget GenerateObjectWithCallback<TTarget, TAttribute>(DelegateGetValueCallback<TAttribute> callback, bool setNewValueAfterCallback = true)
             where TTarget : class, new() where TAttribute : FromPropertyAttribute

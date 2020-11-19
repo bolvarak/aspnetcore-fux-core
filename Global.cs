@@ -21,7 +21,7 @@ namespace Fux.Core
             // Set the date format into the serializer settings
             DateFormatString = new Func<string>(() => {
                 // Localize the environment value
-                string jsonDateFormat = System.Environment.GetEnvironmentVariable("FUX_JSON_DATE_FORMAT").ToString();
+                string jsonDateFormat = System.Environment.GetEnvironmentVariable("FUX_JSON_DATE_FORMAT")?.ToString();
                 // Check the value and return no formatting
                 if (string.IsNullOrEmpty(jsonDateFormat) || string.IsNullOrWhiteSpace(jsonDateFormat))
                     jsonDateFormat = JsonDateFormatDefault;
@@ -31,7 +31,7 @@ namespace Fux.Core
             // Set the pretty-printing into the serializer settings
             Formatting = new Func<Formatting>(() => {
                 // Localize the environment value
-                string jsonPrettyPrint = System.Environment.GetEnvironmentVariable("FUX_JSON_PRETTY_PRINT").ToString();
+                string jsonPrettyPrint = System.Environment.GetEnvironmentVariable("FUX_JSON_PRETTY_PRINT")?.ToString();
                 // Check the value and return no formatting
                 if (string.IsNullOrEmpty(jsonPrettyPrint) || string.IsNullOrWhiteSpace(jsonPrettyPrint))
                     return Formatting.None;
@@ -47,7 +47,7 @@ namespace Fux.Core
             NullValueHandling = new Func<NullValueHandling>(() => {
                 // Localize the environment value
                 string jsonIgnoreNullValues =
-                    System.Environment.GetEnvironmentVariable("FUX_JSON_IGNORE_NULL_VALUES").ToString();
+                    System.Environment.GetEnvironmentVariable("FUX_JSON_IGNORE_NULL_VALUES")?.ToString();
                 // Check the value and return no formatting
                 if (string.IsNullOrEmpty(jsonIgnoreNullValues) || string.IsNullOrWhiteSpace(jsonIgnoreNullValues))
                     return NullValueHandling.Include;
@@ -63,7 +63,7 @@ namespace Fux.Core
             ReferenceLoopHandling = new Func<ReferenceLoopHandling>(() => {
                 // Localize the environment value
                 string jsonReferenceLoopHandler =
-                    System.Environment.GetEnvironmentVariable("FUX_JSON_REFERENCE_LOOP_HANDLING").ToString();
+                    System.Environment.GetEnvironmentVariable("FUX_JSON_REFERENCE_LOOP_HANDLING")?.ToString();
                 // Check the value and return no reference loop handler
                 if (string.IsNullOrEmpty(jsonReferenceLoopHandler) || string.IsNullOrWhiteSpace(jsonReferenceLoopHandler))
                     return ReferenceLoopHandling.Serialize;
