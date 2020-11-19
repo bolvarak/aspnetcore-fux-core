@@ -278,7 +278,7 @@ namespace Fux.Core
             // Check the value of the source
             if (string.IsNullOrEmpty(source) || string.IsNullOrWhiteSpace(source)) return null;
             // Check for a system type and return the system converted value
-            if (Fux.Core.Reflection.IsSystemType(targetType))
+            if (Fux.Core.Reflection.IsSystemType(targetType) && typeof(IConvertible).IsAssignableFrom(targetType))
                 return System.Convert.ChangeType(source, targetType);
             // Return the deserialized value of the object
             return JsonConvert.DeserializeObject(source, targetType);
@@ -306,7 +306,7 @@ namespace Fux.Core
             // Check the value of the source
             if (string.IsNullOrEmpty(source) || string.IsNullOrWhiteSpace(source)) return default;
             // Check for a system type and return the system converted value
-            if (Fux.Core.Reflection.IsSystemType(targetType))
+            if (Fux.Core.Reflection.IsSystemType(targetType) && typeof(IConvertible).IsAssignableFrom(targetType))
                 return (TTarget)System.Convert.ChangeType(source, targetType);
             // Return the deserialized value of the object
             return JsonConvert.DeserializeObject<TTarget>(source);
@@ -367,7 +367,7 @@ namespace Fux.Core
             // Localize our target type
             Type targetType = typeof(string);
             // Check for a system type and return the system converted value
-            if (Fux.Core.Reflection.IsSystemType(sourceType))
+            if (Fux.Core.Reflection.IsSystemType(sourceType) && typeof(IConvertible).IsAssignableFrom(sourceType))
                 return System.Convert.ChangeType(source, targetType);
             // Return the serialized value of the object
             return JsonConvert.SerializeObject(source, Fux.Core.Global.JsonSerializerSettings);
@@ -387,7 +387,7 @@ namespace Fux.Core
             // Localize our target type
             Type targetType = typeof(string);
             // Check for a system type and return the system converted value
-            if (Fux.Core.Reflection.IsSystemType(sourceType))
+            if (Fux.Core.Reflection.IsSystemType(sourceType) && typeof(IConvertible).IsAssignableFrom(sourceType))
                 return (string)System.Convert.ChangeType(source, targetType);
             // Return the serialized value of the object
             return JsonConvert.SerializeObject(source, Fux.Core.Global.JsonSerializerSettings);
