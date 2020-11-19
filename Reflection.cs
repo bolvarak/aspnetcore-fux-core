@@ -165,7 +165,7 @@ namespace Fux.Core
         /// <param name="type"></param>
         /// <returns></returns>
         public static bool IsSystemType(Type type) =>
-            type.Assembly.Equals(typeof(object).Assembly);
+            (type.Assembly.Equals(typeof(object).Assembly) && typeof(IConvertible).IsAssignableFrom(type));
 
         /// <summary>
         /// This method determines whether a type is built-in or not
@@ -173,7 +173,7 @@ namespace Fux.Core
         /// <typeparam name="TType"></typeparam>
         /// <returns></returns>
         public static bool IsSystemType<TType>() =>
-            typeof(TType).Assembly.Equals(typeof(object).Assembly);
+            (typeof(TType).Assembly.Equals(typeof(object).Assembly) && typeof(IConvertible).IsAssignableFrom(typeof(TType)));
     }
 
     /// <summary>
